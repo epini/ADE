@@ -15,9 +15,9 @@ function [Lxx, Lyy, Lzz] = lambda_ADE(lx, ly, lz, g, Lmax, reltol, abstol)
 % Dependencies:
 %   * Requires Ylm(l,m,theta,phi) on the MATLAB path.
 
-if nargin < 7 || isempty(Lmax),   Lmax   = 9;     end
-if nargin < 8 || isempty(reltol), reltol = 1e-3; end
-if nargin < 9 || isempty(abstol), abstol = 1e-3; end
+if nargin < 5 || isempty(Lmax), Lmax = 9;   end
+if nargin < 6 || isempty(Nchi), Nchi = 200; end
+if nargin < 7 || isempty(Nphi), Nphi = 512; end
 
 % guard g away from 1
 g = min(max(g, -0.999999), 0.999999);
