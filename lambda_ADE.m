@@ -1,163 +1,150 @@
-function [Lxx, Lyy, Lzz] = lambda_ADE(lx, ly, lz, g, Lmax, reltol, abstol)
-% lambda_ADE  Return diagonal elements of the Λ tensor that generates λ(s)
+function [Lxx, Lyy, Lzz, info] = lambda_ADE(lx, ly, lz, g, varargin)
+%LAMBDA_ADE  Fast evaluation of Lxx,Lyy,Lzz via odd-l Legendre-kernel formula.
 %
-% Interprets λ(s) as coming from a diagonal tensor Λ in the principal axes:
-%   λ(s) = s' * Λ * s,  Λ = diag(Lxx,Lyy,Lzz)
-% so that:
-%   Lxx = λ(s = x̂), Lyy = λ(s = ŷ), Lzz = λ(s = ẑ)
+% Uses Gauss-Legendre quadrature in chi=cos(theta) and trapezoidal in phi.
+%
+% Inputs:
+%   lx,ly,lz : microscopic mean free paths (positive scalars)
+%   g        : scalar HG asymmetry factor (real scalar, -1<g<1)
+%
+% Optional positional inputs (in this order):
+%   Lmax     : starting maximum l (odd, default 9)
+%   Nchi     : number of Gauss-Legendre nodes in chi (default 200)
+%   Nphi     : number of phi samples (default 512)
+%   RelTol   : relative tolerance for auto-increasing l (default 1e-5)
+%   AbsTol   : absolute tolerance for auto-increasing l (default 1e-10)
+%
+% Output:
+%   Lxx = lambda(x-hat), Lyy = lambda(y-hat), Lzz = lambda(z-hat)
+%   info (optional) contains convergence metadata:
+%       info.LmaxUsed = [lUsedX lUsedY lUsedZ]
+%       info.converged = [cX cY cZ]
+%       info.RelTol, info.AbsTol, info.Nchi, info.Nphi, info.LmaxStart, info.LmaxCap
 %
 % Usage:
-%   [Lxx,Lyy,Lzz] = lambda_ADE(n_in,n_ext,lx,ly,lz,g)
-%   [Lxx,Lyy,Lzz] = lambda_ADE(..., Lmax, reltol, abstol)
-%
-% Inputs are identical to BC_ADE.
-%
-% Dependencies:
-%   * Requires Ylm(l,m,theta,phi) on the MATLAB path.
+%   [Lxx,Lyy,Lzz] = lambda_ADE(lx,ly,lz,g)
+%   [Lxx,Lyy,Lzz] = lambda_ADE(lx,ly,lz,g,Lmax)
+%   [Lxx,Lyy,Lzz] = lambda_ADE(lx,ly,lz,g,Lmax,Nchi)
+%   [Lxx,Lyy,Lzz] = lambda_ADE(lx,ly,lz,g,Lmax,Nchi,Nphi)
+%   [Lxx,Lyy,Lzz] = lambda_ADE(lx,ly,lz,g,Lmax,Nchi,Nphi,RelTol,AbsTol)
+%   [Lxx,Lyy,Lzz,info] = lambda_ADE(...)
 
-if nargin < 5 || isempty(Lmax), Lmax = 9;   end
-if nargin < 6 || isempty(Nchi), Nchi = 200; end
-if nargin < 7 || isempty(Nphi), Nphi = 512; end
+% use inputParser to assign defaults for optional arguments
+p = inputParser();
+p.FunctionName = mfilename();
 
-% guard g away from 1
-g = min(max(g, -0.999999), 0.999999);
+p.addRequired('lx', @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
+p.addRequired('ly', @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
+p.addRequired('lz', @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
+p.addRequired('g',  @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','>',-1,'<',1}));
 
-% isotropic shortcut: λ(s)=lt constant => Λxx=Λyy=Λzz=lt
+p.addOptional('Lmax',   9,    @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive','odd'}));
+p.addOptional('Nchi',   200,  @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
+p.addOptional('Nphi',   512,  @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
+p.addOptional('RelTol', 1e-5, @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
+p.addOptional('AbsTol', 1e-10,@(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','nonnegative'}));
+
+p.parse(lx, ly, lz, g, varargin{:});
+
+lx = p.Results.lx; ly = p.Results.ly; lz = p.Results.lz; g = p.Results.g;
+LmaxStart = p.Results.Lmax; Nchi = p.Results.Nchi; Nphi = p.Results.Nphi;
+RelTol = p.Results.RelTol; AbsTol = p.Results.AbsTol;
+
+% Choose an internal cap for l. (Odd; large enough for most cases but finite.)
+LmaxCap = max(LmaxStart, 101);
+
+% isotropic shortcut
 if lx == ly && lx == lz
-    lt  = lx / (1 - g);
+    lt  = lx/(1-g);
     Lxx = lt; Lyy = lt; Lzz = lt;
+
+    if nargout > 3
+        info = struct('LmaxUsed',[0 0 0], ...
+                      'converged',[true true true], ...
+                      'RelTol',RelTol, 'AbsTol',AbsTol, ...
+                      'Nchi',Nchi, 'Nphi',Nphi, ...
+                      'LmaxStart',LmaxStart, 'LmaxCap',LmaxCap, ...
+                      'note','Isotropic shortcut: lambda = lx/(1-g).');
+    end
     return
 end
 
-% anisotropic rates
-mux = 1 / lx;
-muy = 1 / ly;
-muz = 1 / lz;
+mux = 1/lx; muy = 1/ly; muz = 1/lz;
 
-% precompute H coefficients (same as BC_ADE)
-[Hx, Hy, Hz] = compute_H_coeffs(mux, muy, muz, Lmax, reltol, abstol);
+% Gauss-Legendre in chi, trapezoid in phi
+[chi, wchi] = gauss_legendre(Nchi);      % column
+phi  = (0:Nphi-1) * (2*pi/Nphi);         % row
+wphi = 2*pi/Nphi;
 
-% lambda(s) from the same spectral construction
-lambda_fun = @(chi,phi) lambda_via_legendre(chi, phi, Hx, Hy, Hz, g, Lmax);
+[PHI, CHI] = meshgrid(phi, chi);
 
-% Component functions Λx(s), Λy(s), Λz(s)
-LambdaX_fun = @(chi,phi) Lambda_comp_via_legendre(chi,phi,Hx,g,Lmax);
-LambdaY_fun = @(chi,phi) Lambda_comp_via_legendre(chi,phi,Hy,g,Lmax);
-LambdaZ_fun = @(chi,phi) Lambda_comp_via_legendre(chi,phi,Hz,g,Lmax);
+S  = sqrt(max(0, 1 - CHI.^2));
+sx = S .* cos(PHI);
+sy = S .* sin(PHI);
+sz = CHI;
 
-% Evaluate “diagonal” axis components
-Lxx = LambdaX_fun(0, 0);        % Λx( x-hat )
-Lyy = LambdaY_fun(0, pi/2);     % Λy( y-hat )
-Lzz = LambdaZ_fun(1, 0);        % Λz( z-hat )
+mu = mux.*(1-CHI.^2).*cos(PHI).^2 + ...
+     muy.*(1-CHI.^2).*sin(PHI).^2 + ...
+     muz.*(CHI.^2);
 
-end
+invmu = 1 ./ mu;
+W = (wchi(:) * ones(1,Nphi)) * wphi;  % dOmega weights
 
-% ---------------- helper: compute_H_coeffs ---------------------------------
-function [Hx, Hy, Hz] = compute_H_coeffs(mux, muy, muz, Lmax, reltol, abstol)
-% Compute H_i(l,m) = ∫ (s_i / mu_s(s)) * conj(Y_lm(s)) dΩ
+    function [L, lUsed, converged] = lambda_axis(dotmat, RelTol_, AbsTol_, Lmax0_, LmaxCap_)
+        t = dotmat(:).';
+        L = 0;
+        Lprev = NaN;
+        lUsed = 1;
+        converged = false;
 
-Hx = cell(Lmax+1,1);
-Hy = cell(Lmax+1,1);
-Hz = cell(Lmax+1,1);
+        for l = 1:2:LmaxCap_
+            Pl = legendre(l, t);
+            Pl = reshape(Pl(1,:), size(dotmat));
+            Il = sum(sum((dotmat .* Pl .* invmu) .* W));
+            term = ((2*l+1)/(4*pi)) * (Il / (1 - g^l));
+            L = real(L + term);
+            lUsed = l;
 
-mus = @(c,p) mux.*(1 - c.^2).*(cos(p).^2) + ...
-             muy.*(1 - c.^2).*(sin(p).^2) + ...
-             muz.*(c.^2);
-
-% integrate over full sphere: chi in [-1,1], phi in [0,2pi]
-for l = 1:2:Lmax
-    Hx{l+1} = zeros(2*l+1,1);
-    Hy{l+1} = zeros(2*l+1,1);
-    Hz{l+1} = zeros(2*l+1,1);
-    for m = -l:l
-        mi = m + l + 1;
-
-        HfunX = @(chi,phi) arrayfun(@(c,p) ...
-            (sqrt(max(0,1-c.^2)) .* cos(p) ./ mus(c,p)) .* conj(Ylm(l,m,acos(c),p)), ...
-            chi, phi);
-
-        HfunY = @(chi,phi) arrayfun(@(c,p) ...
-            (sqrt(max(0,1-c.^2)) .* sin(p) ./ mus(c,p)) .* conj(Ylm(l,m,acos(c),p)), ...
-            chi, phi);
-
-        HfunZ = @(chi,phi) arrayfun(@(c,p) ...
-            (c ./ mus(c,p)) .* conj(Ylm(l,m,acos(c),p)), ...
-            chi, phi);
-
-        Hx{l+1}(mi) = integral2(HfunX, -1, 1, 0, 2*pi, 'RelTol',reltol,'AbsTol',abstol);
-        Hy{l+1}(mi) = integral2(HfunY, -1, 1, 0, 2*pi, 'RelTol',reltol,'AbsTol',abstol);
-        Hz{l+1}(mi) = integral2(HfunZ, -1, 1, 0, 2*pi, 'RelTol',reltol,'AbsTol',abstol);
-    end
-end
-end
-
-% ---------------- helper: lambda via Legendre/spectral coefficients ----------
-function lambda_vals = lambda_via_legendre(chi, phi, Hx, Hy, Hz, g, Lmax)
-% lambda(s) from H coefficients (odd-l resolvent). chi,phi can be arrays.
-
-origSize = size(chi);
-chi_vec = chi(:);
-phi_vec = phi(:);
-N = numel(chi_vec);
-out = zeros(N,1);
-
-for k = 1:N
-    c = chi_vec(k);
-    p = phi_vec(k);
-
-    sx = sqrt(max(0,1-c^2)) * cos(p);
-    sy = sqrt(max(0,1-c^2)) * sin(p);
-    sz = c;
-
-    theta = acos(c);
-
-    lam_sum = 0;
-    for l = 1:2:Lmax
-        denom = (1 - g^l);
-        msum = 0;
-        for m = -l:l
-            mi = m + l + 1;
-            Ylm_sp = Ylm(l, m, theta, p);
-            dotH = sx * Hx{l+1}(mi) + sy * Hy{l+1}(mi) + sz * Hz{l+1}(mi);
-            msum = msum + dotH * Ylm_sp;
+            if l >= Lmax0_
+                if ~isnan(Lprev)
+                    d = abs(L - Lprev);
+                    if d <= AbsTol_ + RelTol_*abs(L)
+                        converged = true;
+                        return
+                    end
+                end
+                Lprev = L;
+            end
         end
-        lam_sum = lam_sum + (msum / denom);
     end
 
-    out(k) = real(lam_sum);
-end
+[Lxx, lxxUsed, cx] = lambda_axis(sx, RelTol, AbsTol, LmaxStart, LmaxCap);
+[Lyy, lyyUsed, cy] = lambda_axis(sy, RelTol, AbsTol, LmaxStart, LmaxCap);
+[Lzz, lzzUsed, cz] = lambda_axis(sz, RelTol, AbsTol, LmaxStart, LmaxCap);
 
-lambda_vals = reshape(out, origSize);
-end
-
-function vals = Lambda_comp_via_legendre(chi, phi, Hc, g, Lmax)
-% Returns Λ_i(s) for one component i given its harmonic coefficients Hc{l+1}(m)
-
-origSize = size(chi);
-chi = chi(:);
-phi = phi(:);
-
-out = zeros(numel(chi),1);
-
-for k = 1:numel(chi)
-    c = chi(k);
-    p = phi(k);
-    theta = acos(c);
-
-    sumc = 0;
-    for l = 1:2:Lmax
-        denom = (1 - g^l);
-        msum = 0;
-        for m = -l:l
-            mi = m + l + 1;
-            Ylm_sp = Ylm(l, m, theta, p);
-            msum = msum + Hc{l+1}(mi) * Ylm_sp;
-        end
-        sumc = sumc + msum/denom;
+if nargout > 3
+    info = struct('LmaxUsed',[lxxUsed, lyyUsed, lzzUsed], ...
+                  'converged',[cx cy cz], ...
+                  'RelTol',RelTol, 'AbsTol',AbsTol, ...
+                  'Nchi',Nchi, 'Nphi',Nphi, ...
+                  'LmaxStart',LmaxStart, 'LmaxCap',LmaxCap);
+    if ~(cx && cy && cz)
+        info.note = 'Did not reach tolerance for all components. Consider increasing LmaxStart or Nchi/Nphi.';
     end
-
-    out(k) = real(sumc);
 end
 
-vals = reshape(out, origSize);
 end
+
+
+function [x, w] = gauss_legendre(n)
+% n-point Gauss-Legendre nodes/weights on [-1,1] (Golub-Welsch)
+i = (1:n-1)';
+beta = 0.5 ./ sqrt(1 - (2*i).^(-2));
+T = diag(beta,1) + diag(beta,-1);
+[V,D] = eig(T);
+x = diag(D);
+[x, idx] = sort(x);
+V = V(:, idx);
+w = 2 * (V(1,:).^2).';
+end
+
