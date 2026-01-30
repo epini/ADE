@@ -80,34 +80,19 @@ end
 
 mux = 1/lx; muy = 1/ly; muz = 1/lz;
 
-% ---- quadrature grid (cacheable) ----
-% TODO: perhaps there is no need to make this cacheable
-persistent cache
-if isempty(cache) || cache.Nchi ~= Nchi || cache.Nphi ~= Nphi
-    [chi, wchi] = gauss_legendre(Nchi);              % column
-    phi = (0:Nphi-1) * (2*pi/Nphi);                  % row
-    wphi = 2*pi/Nphi;
+% ---- quadrature grid ----
+[chi, wchi] = gauss_legendre(Nchi);              % column
+phi  = (0:Nphi-1) * (2*pi/Nphi);                 % row
+wphi = 2*pi/Nphi;
 
-    [PHI, CHI] = meshgrid(phi, chi);
-    S = sqrt(max(0, 1 - CHI.^2));
+[PHI, CHI] = meshgrid(phi, chi);
+S = sqrt(max(0, 1 - CHI.^2));
 
-    cache.Nchi = Nchi; cache.Nphi = Nphi;
-    cache.chi  = chi;  cache.wchi = wchi;
-    cache.phi  = phi;  cache.wphi = wphi;
-    cache.CHI  = CHI;  cache.PHI  = PHI;
-    cache.S    = S;
-    cache.cosP = cos(PHI);
-    cache.sinP = sin(PHI);
+cosP = cos(PHI);
+sinP = sin(PHI);
 
-    cache.W = (wchi(:) * ones(1,Nphi)) * wphi;       % dΩ weights
-end
-
-CHI  = cache.CHI;  PHI  = cache.PHI;
-S    = cache.S;
-cosP = cache.cosP; sinP = cache.sinP;
-W    = cache.W;
-chi  = cache.chi;
-phi  = cache.phi;
+% dΩ weights (Gauss–Legendre in chi, periodic trapezoid in phi)
+W = (wchi(:) * ones(1,Nphi)) * wphi;
 
 sx = S .* cosP;
 sy = S .* sinP;
