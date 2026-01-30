@@ -143,38 +143,27 @@ if g ~= 0
         % The paper sum uses m = 2m' (even m) with m'=-n..n, l=2n+1.
         % That corresponds to m even in [-l+1, l-1]. Use nonnegative m and symmetry:
         % |H_{l,-m}|^2 = |H_{l,m}|^2 for real mu_s, so sum over ±m is 2*sum_{m>0}.
-        mpos = 0:2:(l-1);                 % nonnegative even m
-        M = numel(mpos);
-
-        % exp(i m phi) for all needed m at once
-        E = exp(1i*(mpos(:)) * phi);      % M x Nphi
-        Et = E.';                         % Nphi x M
-
-        % for each i: S_i = B_i * exp(i m phi)^T  -> Nchi x M
+        mpos = 0:l;                 % all m
+        E = exp(1i*(mpos(:)) * phi);
+        Et = E.';
         Sx = Bx * Et;
         Sy = By * Et;
         Sz = Bz * Et;
 
-        % legendre(l,chi,'norm') gives P_l^m(chi) for m=0..l, size (l+1) x Nchi
         P = legendre(l, chi, 'norm');
-
-        Hx = zeros(1,M); Hy = zeros(1,M); Hz = zeros(1,M);
+        Hx = zeros(1,numel(mpos)); Hy = Hx; Hz = Hx;
         normfac = 1/sqrt(2*pi);
 
-        % build H for each m using your Ylm normalization convention:
-        % Y_l^m(theta,phi) = (1/sqrt(2π)) * [(-1)^m P_l^m(cosθ)] * exp(i m phi), m>=0
-        for k = 1:M
+        % build H for each m using Ylm normalization convention
+        for k = 1:numel(mpos)
             m = mpos(k);
             a = P(m+1,:).';         % Nchi x 1
             a = ((-1)^m) * a;       % Condon-Shortley factor
-
             Hx(k) = normfac * (a.' * Sx(:,k));
             Hy(k) = normfac * (a.' * Sy(:,k));
             Hz(k) = normfac * (a.' * Sz(:,k));
         end
 
-        % sum_{m even} |H_{lm}^i|^2 over negative+positive m:
-        % m=0 counted once, m>0 counted twice
         sumX = abs(Hx(1))^2 + 2*sum(abs(Hx(2:end)).^2);
         sumY = abs(Hy(1))^2 + 2*sum(abs(Hy(2:end)).^2);
         sumZ = abs(Hz(1))^2 + 2*sum(abs(Hz(2:end)).^2);
