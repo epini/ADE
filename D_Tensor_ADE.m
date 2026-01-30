@@ -143,8 +143,8 @@ if g ~= 0
         % The paper sum uses m = 2m' (even m) with m'=-n..n, l=2n+1.
         % That corresponds to m even in [-l+1, l-1]. Use nonnegative m and symmetry:
         % |H_{l,-m}|^2 = |H_{l,m}|^2 for real mu_s, so sum over ±m is 2*sum_{m>0}.
-        mpos = 0:l;                 % all m
-        E = exp(1i*(mpos(:)) * phi);
+        mpos = 0:l;                     % all m
+        E = exp(1i*(mpos(:)) * phi);    % exp(i m phi) for all needed m at once
         Et = E.';
         Sx = Bx * Et;
         Sy = By * Et;
@@ -208,19 +208,5 @@ if nargout > 3
                   'LmaxStart',LmaxStart);
 end
 
-end
-
-
-function [x, w] = gauss_legendre(n)
-% n-point Gauss-Legendre nodes/weights on [-1,1] (Golub-Welsch)
-% TODO: split into standalone file
-i = (1:n-1)';
-beta = 0.5 ./ sqrt(1 - (2*i).^(-2));
-T = diag(beta,1) + diag(beta,-1);
-[V,D] = eig(T);
-x = diag(D);
-[x, idx] = sort(x);
-V = V(:, idx);
-w = 2 * (V(1,:).^2).';
 end
 
