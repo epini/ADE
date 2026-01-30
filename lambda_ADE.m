@@ -135,16 +135,3 @@ end
 
 end
 
-
-function [x, w] = gauss_legendre(n)
-% n-point Gauss-Legendre nodes/weights on [-1,1] (Golub-Welsch)
-i = (1:n-1)';
-beta = 0.5 ./ sqrt(1 - (2*i).^(-2));
-T = diag(beta,1) + diag(beta,-1);
-[V,D] = eig(T);
-x = diag(D);
-[x, idx] = sort(x);
-V = V(:, idx);
-w = 2 * (V(1,:).^2).';
-end
-

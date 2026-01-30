@@ -250,16 +250,3 @@ end
 if any(~ok(:)), R(~ok) = 1; end
 end
 
-% --------- Gauss-Legendre nodes/weights on [-1,1] (Golub-Welsch) -------------
-% TODO: create standalone gauss_legendre function (used by many routines)
-function [x, w] = gauss_legendre(n)
-i = (1:n-1)';
-beta = 0.5 ./ sqrt(1 - (2*i).^(-2));
-T = diag(beta,1) + diag(beta,-1);
-[V,D] = eig(T);
-x = diag(D);
-[x, idx] = sort(x);
-V = V(:, idx);
-w = 2 * (V(1,:).^2).';
-end
-
