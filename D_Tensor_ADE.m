@@ -81,6 +81,7 @@ end
 mux = 1/lx; muy = 1/ly; muz = 1/lz;
 
 % ---- quadrature grid (cacheable) ----
+% TODO: perhaps there is no need to make this cacheable
 persistent cache
 if isempty(cache) || cache.Nchi ~= Nchi || cache.Nphi ~= Nphi
     [chi, wchi] = gauss_legendre(Nchi);              % column
@@ -238,6 +239,7 @@ end
 
 function [x, w] = gauss_legendre(n)
 % n-point Gauss-Legendre nodes/weights on [-1,1] (Golub-Welsch)
+% TODO: split into standalone file
 i = (1:n-1)';
 beta = 0.5 ./ sqrt(1 - (2*i).^(-2));
 T = diag(beta,1) + diag(beta,-1);
