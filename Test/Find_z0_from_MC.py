@@ -45,7 +45,7 @@ maxiter_coarse = 80
 maxiter_refine = 200
 
 # time exclusion: exclude t < 150 fs
-t_min_fit = 150e-15   # 150 fs
+t_min_fit = 50e-15   # 150 fs
 
 # step-skip threshold: skip evaluating if step < 0.01 µm
 STEP_SKIP_UM = 0.001

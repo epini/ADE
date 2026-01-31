@@ -72,7 +72,7 @@ muz = 1.0 ./ lz;
 
 % ---- choose Nsteps (adaptive) ----
 if Adaptive
-    Nsteps = max(NstepsBase, round(NstepsBase * (1 + abs(g))));
+    Nsteps = max(NstepsBase, round(NstepsBase / (1 - abs(g))));
 else
     Nsteps = NstepsBase;
 end
