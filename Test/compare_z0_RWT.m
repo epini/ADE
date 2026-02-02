@@ -11,9 +11,9 @@
 clear; close all; clc;
 
 %% --- Parameters (anisotropic case) ---
-mux = 4;
+mux = 1;
 muy = 2;
-muz = 1;
+muz = 4;
 
 lx0 = 1/mux;
 ly0 = 1/muy;
@@ -38,7 +38,7 @@ reltol = 1e-3;
 abstol = 1e-3;
 
 %% --- MC (RWT) settings ---
-Nwalkers_batch   = 1e6;   % photons per batch
+Nwalkers_batch   = 5e6;   % photons per batch
 Nbatches_max     = 10;    % batches per g (increase if you want smaller SE)
 NstepsBase       = 1e2;   % as requested (single case)
 adaptive_default = false;
@@ -195,7 +195,7 @@ uistack(pADEi, 'top');
 uistack(pMCi,  'top');
 
 xlim([-1 1]);
-ylim([0.7 1.2]);
+ylim([0.8 1.3]);
 
 xlabel('$g$', 'Interpreter','latex', 'FontSize', 16);
 ylabel('$z_0/z_0^{\mathrm{simpl}}$', 'Interpreter','latex', 'FontSize', 16);
@@ -206,7 +206,7 @@ lgd = legend([pADE pAl pMC pADEi pMCi], ...
      '$z_0$ (MC sim.)', ...
      'Iso. (DE)', ...
      'Iso. MC sim.'}, ...
-    'Location','northeast', ...
+    'Location','northwest', ...
     'Interpreter','latex', ...
     'FontSize', 10);
 
@@ -215,9 +215,9 @@ ax = gca;
 ax.Units = 'normalized';
 
 % Force legend to sit exactly at top-right corner of axes
-lgd.Position(1) = ax.Position(1) + ax.Position(3) - lgd.Position(3);
-lgd.Position(2) = ax.Position(2) + ax.Position(4) - lgd.Position(4);
-
+lgd.Position(1) = ax.Position(1);                          % left edge
+lgd.Position(2) = ax.Position(2) + ax.Position(4) ...
+                  - lgd.Position(4);                       % top edge
 
 % Export
 exportgraphics(gca, 'Fig4b.pdf', 'ContentType','vector');

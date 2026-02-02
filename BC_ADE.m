@@ -5,30 +5,20 @@ function [ze, z0, info] = BC_ADE(n_in, n_ext, lx, ly, lz, g, varargin)
 %   ze : extrapolated boundary length  [same length units as lx,ly,lz]
 %   z0 : equivalent isotropic source depth [same units]
 %
-% Model assumptions:
-%   * mu_s(s) is anisotropic with diagonal tensor (principal axes).
-%   * HG phase function with scalar g, |g|<1.
-%   * For g ~= 0 uses a diagonal "persistence tensor" Λ so that
-%       lambda(s) ~= Lxx*sx^2 + Lyy*sy^2 + Lzz*sz^2,
-%     where (Lxx,Lyy,Lzz) are computed from the odd-l Legendre kernel series.
-%   * For g == 0, enforces the exact user requirement z0 = lz and uses the
-%     exact (g=0) integrands (lambda(s)=ell(s)=1/mu_s(s)).
+% Model assumptions (see your project notes).
 %
 % Usage:
 %   [ze,z0] = BC_ADE(n_in,n_ext,lx,ly,lz,g)
 %   [ze,z0] = BC_ADE(..., Lmax)
 %   [ze,z0] = BC_ADE(..., Lmax, RelTol)
 %   [ze,z0] = BC_ADE(..., Lmax, RelTol, AbsTol)
+%   [ze,z0,info] = BC_ADE(..., 'ApplyTailCorrection', false)
 %
 % Name/value parameters (optional):
-%   'Nchi'    : Gauss-Legendre nodes in chi (default 200)
-%   'Nphi'    : phi samples (default 512)
-%   'LmaxCap' : max odd-l allowed for convergence loop (default max(Lmax,51))
-%
-% Outputs:
-%   info (optional) struct with diagnostics (no printing).
-%
-% TODO: split ze and z0 into separate functions
+%   'Nchi'               : Gauss-Legendre nodes in chi (default 200)
+%   'Nphi'               : phi samples (default 512)
+%   'LmaxCap'            : max odd-l allowed for convergence loop (default max(Lmax,51))
+%   'ApplyTailCorrection': true (default) to apply additive z0 tail correction; set false to disable
 
 % ---------- input parsing / validation ----------
 p = inputParser();
@@ -48,6 +38,7 @@ p.addOptional('AbsTol', 1e-10, @(x) validateattributes(x, {'numeric'}, {'real','
 p.addParameter('Nchi',    200, @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
 p.addParameter('Nphi',    512, @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
 p.addParameter('LmaxCap', 101,  @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive','odd'}));
+p.addParameter('ApplyTailCorrection', true, @(x) islogical(x) || (isnumeric(x) && ismember(x,[0,1])));
 
 p.parse(n_in, n_ext, lx, ly, lz, g, varargin{:});
 
@@ -60,8 +51,9 @@ RelTol = p.Results.RelTol;
 AbsTol = p.Results.AbsTol;
 Nchi   = p.Results.Nchi;
 Nphi   = p.Results.Nphi;
-
 LmaxCap = max(Lmax0, p.Results.LmaxCap);
+
+applyTail = logical(p.Results.ApplyTailCorrection);
 
 % ---------- refractive index ratio ----------
 n = n_in / n_ext;
@@ -86,7 +78,8 @@ if lx == ly && lx == lz
     if nargout > 2
         info = struct('case','isotropic', 'LmaxUsed',0, 'converged',true, ...
                       'Nchi',Nchi,'Nphi',Nphi,'RelTol',RelTol,'AbsTol',AbsTol, ...
-                      'n',n, 'Lxx',lt,'Lyy',lt,'Lzz',lt);
+                      'n',n, 'Lxx',lt,'Lyy',lt,'Lzz',lt, 'z0_tail_correction',0, ...
+                      'apply_tail_correction', applyTail);
     end
     return
 end
@@ -129,8 +122,8 @@ end
 R_h = Rchi * ones(1,Nphi);
 
 % B and X are independent of lambda(s)
-B = sum(sum( (CHIh .* invmu_h) .* W_h ));
-X = sum(sum( (CHIh .* invmu_h .* R_h) .* W_h ));
+B = sum(sum( (CHIh .* invmu_h) .* W_h ));    % ∫ chi / mu_s dΩ (hemisphere)
+X = sum(sum( (CHIh .* invmu_h .* R_h) .* W_h ));  % with R
 
 % g == 0 branch: exact (lambda(s)=ell(s)=1/mu_s(s)), enforce z0=lz
 if g == 0
@@ -142,16 +135,16 @@ if g == 0
     if nargout > 2
         info = struct('case','anisotropic_g0', 'LmaxUsed',0, 'converged',true, ...
                       'Nchi',Nchi,'Nphi',Nphi,'RelTol',RelTol,'AbsTol',AbsTol, ...
-                      'n',n);
+                      'n',n, 'z0_tail_correction',0, 'apply_tail_correction', applyTail);
     end
     return
 end
 
 % ---------- precompute hemisphere linear forms for C and Y under lambda(s)=sx^2 Lxx + sy^2 Lyy + sz^2 Lzz ----------
 % C = ∫ chi^2 * lambda(s) / mu(s) dΩ = Lxx*Cx + Lyy*Cy + Lzz*Cz
-Cx = sum(sum( (CHIh.^2 .* (sx_h.^2) .* invmu_h) .* W_h ));
-Cy = sum(sum( (CHIh.^2 .* (sy_h.^2) .* invmu_h) .* W_h ));
-Cz = sum(sum( (CHIh.^2 .* (sz_h.^2) .* invmu_h) .* W_h ));
+Cx = sum(sum( (CHIh.^2 .* (sx_h.^2) .* invmu_h) .* W_h  ));
+Cy = sum(sum( (CHIh.^2 .* (sy_h.^2) .* invmu_h) .* W_h  ));
+Cz = sum(sum( (CHIh.^2 .* (sz_h.^2) .* invmu_h) .* W_h  ));
 
 % Y = ∫ chi^2 * lambda(s) / mu(s) * R(chi) dΩ = Lxx*Yx + Lyy*Yy + Lzz*Yz
 Yx = sum(sum( (CHIh.^2 .* (sx_h.^2) .* invmu_h .* R_h) .* W_h ));
@@ -183,6 +176,12 @@ ze_prev = NaN; z0_prev = NaN;
 converged = false;
 l_used = 1;
 
+% --- BOOKKEEPING ARRAYS: initialize before the loop so they always exist ---
+Ilx_list = [];
+Ily_list = [];
+Ilz_list = [];
+l_list   = [];
+
 for l = 1:2:LmaxCap
     denom = 1 - g^l;  % safe because |g|<1
 
@@ -199,6 +198,12 @@ for l = 1:2:LmaxCap
     Lxx = real(Lxx + alpha * Ilx);
     Lyy = real(Lyy + alpha * Ily);
     Lzz = real(Lzz + alpha * Ilz);
+
+    % store for tail-correction computation (use base-alpha later with denom=1)
+    Ilx_list(end+1) = Ilx; %#ok<AGROW>
+    Ily_list(end+1) = Ily; %#ok<AGROW>
+    Ilz_list(end+1) = Ilz; %#ok<AGROW>
+    l_list(end+1)   = l;   %#ok<AGROW>
 
     l_used = l;
 
@@ -226,12 +231,31 @@ for l = 1:2:LmaxCap
     end
 end
 
+% ---------- additive tail correction for z0 (enforce correct g->0 limit) ----------
+if applyTail && ~isempty(l_list)
+    base_alphas = (2.*l_list + 1) / (4*pi);
+    Lzz_g0 = real( sum( base_alphas .* Ilz_list ) );
+    tail = lz - Lzz_g0;
+    z0 = z0 + tail;
+else
+    if ~isempty(l_list)
+        base_alphas = (2.*l_list + 1) / (4*pi);
+        Lzz_g0 = real( sum( base_alphas .* Ilz_list ) ); % reported only
+    else
+        Lzz_g0 = 0;
+    end
+    tail = 0;
+end
+
 % ---------- output info ----------
 if nargout > 2
     info = struct('case','anisotropic_g', 'LmaxUsed',l_used, 'LmaxStart',Lmax0, ...
                   'LmaxCap',LmaxCap, 'converged',converged, ...
                   'Nchi',Nchi,'Nphi',Nphi,'RelTol',RelTol,'AbsTol',AbsTol, ...
-                  'n',n, 'Lxx',Lxx,'Lyy',Lyy,'Lzz',Lzz);
+                  'n',n, 'Lxx',Lxx,'Lyy',Lyy,'Lzz',Lzz, ...
+                  'Lzz_truncated_at_g0', Lzz_g0, ...
+                  'z0_tail_correction', tail, ...
+                  'apply_tail_correction', applyTail);
 end
 
 end
@@ -249,4 +273,3 @@ if any(ok(:))
 end
 if any(~ok(:)), R(~ok) = 1; end
 end
-

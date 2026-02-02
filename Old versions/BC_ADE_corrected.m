@@ -18,9 +18,9 @@ function [ze, z0] = BC_ADE_corrected(n_in, n_ext, lx, ly, lz, g, Lmax, reltol, a
 % Author: adapted from Ernesto Pini's original
 % Minor: uses only odd l (1,3,5,...)
 
-if nargin < 7 || isempty(Lmax), Lmax = 9; end
-if nargin < 8 || isempty(reltol), reltol = 1e-3; end
-if nargin < 9 || isempty(abstol), abstol = 1e-3; end
+if nargin < 7 || isempty(Lmax), Lmax = 15; end
+if nargin < 8 || isempty(reltol), reltol = 1e-4; end
+if nargin < 9 || isempty(abstol), abstol = 1e-4; end
 
 % refractive index ratio
 n = n_in / n_ext;
