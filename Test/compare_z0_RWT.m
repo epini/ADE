@@ -29,7 +29,7 @@ n_in  = 1;
 n_ext = 1;
 
 % Same g-grid as your other script
-g = linspace(-0.95, 0.95, 191);
+g = linspace(-0.9, 0.9, 19);
 Nx = numel(g);
 
 %% --- Theory settings ---
@@ -220,7 +220,7 @@ lgd.Position(2) = ax.Position(2) + ax.Position(4) ...
                   - lgd.Position(4);                       % top edge
 
 % Export
-exportgraphics(gca, 'Fig4b.pdf', 'ContentType','vector');
+exportgraphics(gca, 'Fig4bv4.pdf', 'ContentType','vector');
 
 %% --- Save results ---
 save('z0_clean_results.mat', ...
