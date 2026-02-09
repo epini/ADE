@@ -1,4 +1,4 @@
-function T = T_ADE(L, n_in, n_ext, lx, ly, lz, mua)
+function T = T_ADE(L, n_in, n_ext, lx, ly, lz, g, mua)
 % T_ADE total transmittance from a turbid slab
 %
 % Brief: this function returns the total transmittance T
@@ -25,7 +25,7 @@ function T = T_ADE(L, n_in, n_ext, lx, ly, lz, mua)
 % Affiliation:  Department of Physics and Astronomy, Università di Firenze
 % Email:        pinie@lens.unifi.it
 
-[~, ~, Dz] = D_Tensor_ADE(n_in, lx, ly, lz);
+[~, ~, Dz] = D_Tensor_ADE(n_in, lx, ly, lz, g);
 [ze, z0] = BC_ADE(n_in, n_ext, lx, ly, lz, g);
 
 v = 299.7924589/n_in;
