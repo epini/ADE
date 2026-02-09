@@ -29,7 +29,8 @@ function Tt = Tt_ADE_Alerstam(t, L, n_in, n_ext, lx, ly, lz, mua, g)
 % Email:        pinie@lens.unifi.it
 
 [~, ~, Dz] = D_Tensor_ADE(n_in, lx, ly, lz, g);
-[ze, z0] = BC_ADE_Alerstam(n_in, n_ext, lx, ly, lz, g);
+[ze, ~] = BC_ADE_Alerstam(n_in, n_ext, lx, ly, lz, g);
+[~, z0] = BC_ADE(n_in, n_ext, lx, ly, lz, g);
 
 v = 299.7924589/n_in;
 

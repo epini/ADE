@@ -30,9 +30,9 @@ function T = T_ADE(L, n_in, n_ext, lx, ly, lz, mua)
 
 v = 299.7924589/n_in;
 
-if mua*lz < 1e-10
+if mua*z0 < 1e-10
 
-    T = (lz + ze)/(L + 2*ze);
+    T = (z0 + ze)/(L + 2*ze);
 
 else
 

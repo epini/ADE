@@ -31,6 +31,12 @@ function R = R_ADE(L, n_in, n_ext, lx, ly, lz, mua)
 
 v = 299.7924589/n_in;
 
+if mua*z0 < 1e-10
+
+    R = 1 - (z0 + ze)/(L + 2*ze);
+
+else
+
     R = 0;
 
     M = 10000; % number of virtual sources considered in the expansion

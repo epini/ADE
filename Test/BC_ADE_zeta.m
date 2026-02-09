@@ -1,4 +1,4 @@
-function [ze, z0, info] = BC_ADE(n_in, n_ext, lx, ly, lz, g, varargin)
+function [ze, z0, info] = BC_ADE_zeta(n_in, n_ext, lx, ly, lz, g, varargin)
 %BC_ADE  Boundary-condition lengths for ADE slab diffusion (fast quadrature).
 %
 % This variant computes:

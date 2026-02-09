@@ -8,7 +8,7 @@ addpath('C:\Users\ernes\Desktop\PostDoc\MC\Anisotropy\Anisotropic Diffusion Equa
 addpath('C:\Users\ernes\Desktop\PostDoc\MC\Anisotropy\Giusfredi formulas test')
 
 %% Load MAT file
-matFile = 'tr_transmission_curves_paper09.mat';   % set full path if needed
+matFile = 'tr_transmission_curves_paper_iso_09.mat';   % set full path if needed
 S = load(matFile);
 
 % --- time axis (ps) ---
@@ -19,7 +19,7 @@ else
 end
 
 % --- MC curves ---
-MC_pencil = S.pencil_beam(:);
+MC_pencil = S.pencil_beam(:)/0.992;
 MC_iso    = S.isotropic_source(:);
 
 %% Extract parameters from meta
