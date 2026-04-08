@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "generalized-ade"
+version = "0.1.0"
+description = "Generalized anisotropic diffusion equation tools for slab geometry"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Ernesto Pini", email = "pinie@lens.unifi.it" }
+]
+dependencies = [
+  "numpy>=1.24",
+  "scipy>=1.10",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "matplotlib>=3.8",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+markers = [
+  "smoke: quick smoke tests",
+  "reference: tests against MATLAB reference JSON files",
+]

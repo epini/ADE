@@ -1,0 +1,29 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+
+# MATLAB
+*.asv
+*.mlx~
+*.m~
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Build artifacts
+build/
+dist/
+
+# Local validation outputs
+*.json
+!python/tests/reference/*.json

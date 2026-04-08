@@ -108,8 +108,8 @@ Rxy = Rxy_ADE(x, y, L, n_in, n_ext, musx, musy, musz, g, mua);
 Txy = Txy_ADE(x, y, L, n_in, n_ext, musx, musy, musz, g, mua);
 
 % Make sure maps are arranged as (y,x) for plotting
-Rxy = ensureYX2D(Rxy, x, y, 'Rxy_ADE');
-Txy = ensureYX2D(Txy, x, y, 'Txy_ADE');
+Rxy = ensureYX2D(Rxy, x, y, 'Rxy_ADE').';
+Txy = ensureYX2D(Txy, x, y, 'Txy_ADE').';
 
 % Floors for logarithmic visualization
 Rxy_log = log10(max(Rxy, realmin));
@@ -168,6 +168,9 @@ Rxyt = Rxyt_ADE(x, y, t, L, n_in, n_ext, musx, musy, musz, g, sx, sy, mua);
 Txyt = Txyt_ADE(x, y, t, L, n_in, n_ext, musx, musy, musz, g, sx, sy, mua);
 
 % Make sure arrays are arranged as (y,x,t)
+Rxyt = permute(Rxyt, [2 1 3]);
+Txyt = permute(Txyt, [2 1 3]);
+
 Rxyt = ensureYX3D(Rxyt, x, y, t, 'Rxyt_ADE');
 Txyt = ensureYX3D(Txyt, x, y, t, 'Txyt_ADE');
 

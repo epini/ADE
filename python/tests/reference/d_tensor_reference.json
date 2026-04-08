@@ -1,0 +1,82 @@
+[
+  {
+    "name": "iso_g0",
+    "n_in": 1.4,
+    "musx": 10,
+    "musy": 10,
+    "musz": 10,
+    "g": 0,
+    "Dx": 7.1379156666666672,
+    "Dy": 7.1379156666666672,
+    "Dz": 7.1379156666666672,
+    "info": {
+      "converged": true,
+      "LmaxUsed": 0,
+      "Nchi": 200,
+      "Nphi": 512,
+      "RelTol": 1E-5,
+      "AbsTol": 1E-10,
+      "LmaxStart": 15
+    }
+  },
+  {
+    "name": "iso_g085",
+    "n_in": 1.4,
+    "musx": 10,
+    "musy": 10,
+    "musz": 10,
+    "g": 0.85,
+    "Dx": 47.586104444444437,
+    "Dy": 47.586104444444437,
+    "Dz": 47.586104444444437,
+    "info": {
+      "converged": true,
+      "LmaxUsed": 0,
+      "Nchi": 200,
+      "Nphi": 512,
+      "RelTol": 1E-5,
+      "AbsTol": 1E-10,
+      "LmaxStart": 15
+    }
+  },
+  {
+    "name": "aniso_g0",
+    "n_in": 1.4,
+    "musx": 12,
+    "musy": 8,
+    "musz": 5,
+    "g": 0,
+    "Dx": 6.4465980277262744,
+    "Dy": 8.9765551965916117,
+    "Dz": 12.993170418910371,
+    "info": {
+      "converged": true,
+      "LmaxUsed": 0,
+      "Nchi": 200,
+      "Nphi": 512,
+      "RelTol": 1E-5,
+      "AbsTol": 1E-10,
+      "LmaxStart": 15
+    }
+  },
+  {
+    "name": "aniso_g085",
+    "n_in": 1.4,
+    "musx": 12,
+    "musy": 8,
+    "musz": 5,
+    "g": 0.85,
+    "Dx": 42.118215855557963,
+    "Dy": 59.053868522673,
+    "Dz": 84.704934851640743,
+    "info": {
+      "converged": true,
+      "LmaxUsed": 15,
+      "Nchi": 200,
+      "Nphi": 512,
+      "RelTol": 1E-5,
+      "AbsTol": 1E-10,
+      "LmaxStart": 15
+    }
+  }
+]

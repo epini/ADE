@@ -1,0 +1,62 @@
+[
+  {
+    "name": "iso_nmatch_g0",
+    "n_in": 1.4,
+    "n_ext": 1.4,
+    "musx": 10,
+    "musy": 10,
+    "musz": 10,
+    "g": 0,
+    "ze": 0.066666666666666666,
+    "z0": 0.1,
+    "case": "isotropic"
+  },
+  {
+    "name": "iso_nmatch_g085",
+    "n_in": 1.4,
+    "n_ext": 1.4,
+    "musx": 10,
+    "musy": 10,
+    "musz": 10,
+    "g": 0.85,
+    "ze": 0.44444444444444436,
+    "z0": 0.66666666666666652,
+    "case": "isotropic"
+  },
+  {
+    "name": "iso_mismatch_g0",
+    "n_in": 1.4,
+    "n_ext": 1,
+    "musx": 10,
+    "musy": 10,
+    "musz": 10,
+    "g": 0,
+    "ze": 0.19616307934103341,
+    "z0": 0.1,
+    "case": "isotropic"
+  },
+  {
+    "name": "aniso_g0",
+    "n_in": 1.4,
+    "n_ext": 1,
+    "musx": 12,
+    "musy": 8,
+    "musz": 5,
+    "g": 0,
+    "ze": 0.25069035699267095,
+    "z0": 0.2,
+    "case": "anisotropic"
+  },
+  {
+    "name": "aniso_g085",
+    "n_in": 1.4,
+    "n_ext": 1,
+    "musx": 12,
+    "musy": 8,
+    "musz": 5,
+    "g": 0.85,
+    "ze": 1.6799748029623103,
+    "z0": 1.1147137372544524,
+    "case": "anisotropic"
+  }
+]
