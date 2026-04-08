@@ -1,52 +1,81 @@
-function R = R_ADE(L, n_in, n_ext, lx, ly, lz, mua)
-% R_ADE total reflectance from a turbid slab
+function R = R_ADE(L, n_in, n_ext, musx, musy, musz, g, mua)
+%R_ADE Total diffuse reflectance from an anisotropic turbid slab.
 %
-% Brief: this function returns the total reflectance R
-% from an anisotropic slab of thickness L [μm].
-% xy is the slab plane, while z is the direction of incidence of the pencil beam.
-% If a refractive index contrast is set, the effect of Fresnel
-% reflections at the boundaries is considered. Absorption is assumed to be
-% uniform, mua [1/μm].
+%   R = R_ADE(L, n_in, n_ext, musx, musy, musz, g, mua)
 %
-% Inputs:
-%    L - slab thickness [μm]
-%    n_in - refractive index of the diffusive medium
-%    n_ext - refractive index of the external medium
-%    lx - scattering mean free path along x [μm]
-%    ly - scattering mean free path along y [μm]
-%    lz - scattering mean free path along z [μm]
-%    mua - absorption rate [1/μm]
+%   Computes the total diffuse reflectance R of a slab described by the
+%   anisotropic diffusion equation (ADE). The slab lies in the xy plane,
+%   with thickness L along z, and is illuminated along the z direction.
+%   Refractive-index mismatch at the boundaries is accounted for through
+%   the extrapolated boundary conditions.
 %
-% Outputs:
-%    R - total reflectance
+%   Units convention:
+%     lengths in mm, optical coefficients in mm^-1, time in ns.
 %
-% See also: total_refl_trans.m
+%   Inputs
+%   ------
+%   L       - Slab thickness [mm, positive scalar].
+%   n_in    - Refractive index of the diffusive medium [dimensionless scalar].
+%   n_ext   - Refractive index of the external medium [dimensionless scalar].
+%   musx    - Scattering coefficient along x [mm^-1, positive scalar].
+%   musy    - Scattering coefficient along y [mm^-1, positive scalar].
+%   musz    - Scattering coefficient along z [mm^-1, positive scalar].
+%   g       - Henyey-Greenstein asymmetry factor [dimensionless scalar,
+%             -1 < g < 1].
+%   mua     - Absorption coefficient [mm^-1, non-negative scalar].
+%
+%   Output
+%   ------
+%   R       - Total diffuse reflectance [dimensionless scalar].
+%
+%   Notes
+%   -----
+%   The diffusion coefficient Dz is obtained from D_Tensor_ADE, and the
+%   boundary parameters ze and z0 are obtained from BC_ADE.
+%
+%   Reference
+%   ---------
+%   E. Pini et al., "Generalized diffusion theory for radiative transfer
+%   in fully anisotropic scattering media." arXiv preprint
+%   arXiv:2602.18963 (2026).
+%
+%   Author:       Ernesto Pini
+%   Affiliation:  Istituto Nazionale di Ricerca Metrologica (INRiM)
+%   Email:        pinie@lens.unifi.it
 
-% Author:       Ernesto Pini
-% Affiliation:  Department of Physics and Astronomy, Università di Firenze
-% Email:        pinie@lens.unifi.it
+validateattributes(L,    {'numeric'}, {'real','finite','scalar','positive'});
+validateattributes(n_in, {'numeric'}, {'real','finite','scalar','positive'});
+validateattributes(n_ext,{'numeric'}, {'real','finite','scalar','positive'});
+validateattributes(musx, {'numeric'}, {'real','finite','scalar','positive'});
+validateattributes(musy, {'numeric'}, {'real','finite','scalar','positive'});
+validateattributes(musz, {'numeric'}, {'real','finite','scalar','positive'});
+validateattributes(g,    {'numeric'}, {'real','finite','scalar','>',-1,'<',1});
+validateattributes(mua,  {'numeric'}, {'real','finite','scalar','nonnegative'});
 
-[~, ~, Dz] = D_Tensor_ADE(n_in, lx, ly, lz, g);
-[ze, z0] = BC_ADE(n_in, n_ext, lx, ly, lz, g);
+[~, ~, Dz] = D_Tensor_ADE(n_in, musx, musy, musz, g);
+[ze, z0]   = BC_ADE(n_in, n_ext, musx, musy, musz, g);
 
-v = 299.7924589/n_in;
+v = 299.792458 / n_in;   % speed of light in the medium [mm/ns]
 
-if mua*z0 < 1e-10
+if mua * z0 < 1e-10
 
-    R = 1 - (z0 + ze)/(L + 2*ze);
+    R = 1 - (z0 + ze) / (L + 2*ze);
 
 else
 
     R = 0;
 
-    M = 10000; % number of virtual sources considered in the expansion
+    M = 10000; % number of virtual sources in the series expansion
+    kappa = sqrt(mua * v / Dz);
+
     for m = -M:M
-        z3 = - 2*m*L - 4*m*ze - z0;
-        z4 = - 2*m*L - (4*m - 2)*ze + z0;
-        R = R + (sign(z3)*exp(-abs(z3)*sqrt(mua*v/Dz)) - sign(z4)*exp(-abs(z4)*sqrt(mua*v/Dz)));
+        z3 = -2*m*L - 4*m*ze - z0;
+        z4 = -2*m*L - (4*m - 2)*ze + z0;
+        R = R + sign(z3) * exp(-abs(z3) * kappa) ...
+              - sign(z4) * exp(-abs(z4) * kappa);
     end
 
-    R = -R/2;
+    R = -R / 2;
 
 end
 

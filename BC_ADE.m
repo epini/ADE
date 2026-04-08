@@ -1,21 +1,109 @@
-function [ze, z0, info] = BC_ADE(n_in, n_ext, lx, ly, lz, g, varargin)
-%BC_ADE  Boundary-condition lengths for ADE slab diffusion (fast quadrature).
+function [ze, z0, info] = BC_ADE(n_in, n_ext, musx, musy, musz, g, varargin)
+%BC_ADE Boundary-condition lengths for ADE slab diffusion.
 %
-% This variant computes:
-%  - H^z_{lm} as integral over full solid angle 4pi (bulk projection)
-%  - Htilde^z_{lm} as integral over upper hemisphere Omega_up (Fresnel-weighted)
-% and uses the odd-l / even-m selection rules for the z component.
+%   [ze, z0] = BC_ADE(n_in, n_ext, musx, musy, musz, g) computes the
+%   extrapolated boundary length ze and the source boundary depth z0 for
+%   the anisotropic diffusion equation (ADE) in a slab geometry.
 %
-% Inputs/outputs and options same as previous versions.
-% Dependencies: gauss_legendre(n)
+%   [ze, z0, info] = BC_ADE(...) also returns a structure with auxiliary
+%   numerical quantities and convergence diagnostics.
+%
+%   Syntax
+%   ------
+%   [ze, z0] = BC_ADE(n_in, n_ext, musx, musy, musz, g)
+%   [ze, z0] = BC_ADE(n_in, n_ext, musx, musy, musz, g, LmaxStart)
+%   [ze, z0] = BC_ADE(n_in, n_ext, musx, musy, musz, g, LmaxStart, RelTol, AbsTol)
+%   [ze, z0] = BC_ADE(..., 'Nchi', Nchi, 'Nphi', Nphi, 'LmaxCap', LmaxCap)
+%   [ze, z0, info] = BC_ADE(...)
+%
+%   Description
+%   -----------
+%   This function computes the ADE boundary-condition lengths for a medium
+%   characterized by principal-axis scattering coefficients musx, musy and
+%   musz, internal refractive index n_in, external refractive index n_ext,
+%   and scalar Henyey-Greenstein asymmetry factor g.
+%
+%   The extrapolated boundary length ze is obtained from bulk and
+%   Fresnel-weighted hemisphere integrals, together with the z-component of
+%   the diffusion tensor. The source depth z0 is identified with the
+%   persistence length lambda along the z direction.
+%
+%   The g = 0 contribution is evaluated by numerical quadrature. For g ~= 0,
+%   the corrections are computed through odd-l spherical-harmonic and
+%   Legendre-series expansions.
+%
+%   Units convention
+%   ----------------
+%   Lengths in mm, optical coefficients in mm^-1, and time in ns.
+%
+%   Input arguments
+%   ---------------
+%   n_in      - Refractive index of the medium [dimensionless scalar].
+%   n_ext     - Refractive index of the external medium [dimensionless scalar].
+%   musx      - Scattering coefficient along x [mm^-1, positive scalar].
+%   musy      - Scattering coefficient along y [mm^-1, positive scalar].
+%   musz      - Scattering coefficient along z [mm^-1, positive scalar].
+%   g         - Henyey-Greenstein asymmetry factor [dimensionless scalar,
+%               -1 < g < 1].
+%
+%   Optional input arguments
+%   ------------------------
+%   LmaxStart - Initial odd harmonic order used for convergence checking
+%               [positive integer, default: 15]. If even, it is promoted
+%               internally to the next odd value.
+%   RelTol    - Relative convergence tolerance for the series expansions
+%               [positive scalar, default: 1e-5].
+%   AbsTol    - Absolute convergence tolerance for the series expansions
+%               [non-negative scalar, default: 1e-10].
+%
+%   Name-value arguments
+%   --------------------
+%   'Nchi'    - Number of Gauss-Legendre nodes for chi = cos(theta)
+%               [positive integer, default: 200].
+%   'Nphi'    - Number of azimuthal samples in phi
+%               [positive integer, default: 512].
+%   'LmaxCap' - Maximum odd harmonic order allowed in the series expansions
+%               [positive integer, default: 101]. If even, it is promoted
+%               internally to the next odd value.
+%
+%   Output arguments
+%   ----------------
+%   ze        - Extrapolated boundary length [mm].
+%   z0        - Source boundary depth, equal to lambda_z [mm].
+%   info      - Structure containing auxiliary numerical information and
+%               convergence diagnostics, including v [mm/ns], lavg [mm],
+%               Dz [mm^2/ns], and intermediate boundary integrals.
+%
+%   Example
+%   -------
+%   [ze, z0, info] = BC_ADE(1.4, 1.0, 12.5, 10.0, 5.0, 0.9, 'Nchi', 240);
+%
+%   Notes
+%   -----
+%   The speed of light is internally expressed in mm/ns. Therefore ze and
+%   z0 are returned in mm, and all internally derived diffusion quantities
+%   are expressed consistently in mm^2/ns.
+%
+%   Reference
+%   ---------
+%   E. Pini et al., "Generalized diffusion theory for radiative transfer
+%   in fully anisotropic scattering media." arXiv preprint arXiv:2602.18963
+%   (2026).
+%
+%   Author:       Ernesto Pini
+%   Affiliation:  Istituto Nazionale di Ricerca Metrologica (INRiM)
+%   Email:        pinie@lens.unifi.it
+%
+%   Dependencies: gauss_legendre(n)
 
 % ---------- parse / validate ----------
-p = inputParser(); p.FunctionName = mfilename();
+p = inputParser();
+p.FunctionName = mfilename();
 p.addRequired('n_in',  @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
 p.addRequired('n_ext', @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
-p.addRequired('lx',    @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
-p.addRequired('ly',    @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
-p.addRequired('lz',    @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
+p.addRequired('musx',  @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
+p.addRequired('musy',  @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
+p.addRequired('musz',  @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
 p.addRequired('g',     @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','>',-1,'<',1}));
 p.addOptional('LmaxStart', 15,   @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
 p.addOptional('RelTol',    1e-5, @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
@@ -23,13 +111,13 @@ p.addOptional('AbsTol',    1e-10,@(x) validateattributes(x, {'numeric'}, {'real'
 p.addParameter('Nchi',    200, @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
 p.addParameter('Nphi',    512, @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
 p.addParameter('LmaxCap', 101, @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
-p.parse(n_in, n_ext, lx, ly, lz, g, varargin{:});
+p.parse(n_in, n_ext, musx, musy, musz, g, varargin{:});
 
 n_in      = p.Results.n_in;
 n_ext     = p.Results.n_ext;
-lx        = p.Results.lx;
-ly        = p.Results.ly;
-lz        = p.Results.lz;
+musx      = p.Results.musx;
+musy      = p.Results.musy;
+musz      = p.Results.musz;
 g         = p.Results.g;
 LmaxStart = p.Results.LmaxStart;
 RelTol    = p.Results.RelTol;
@@ -44,11 +132,11 @@ LmaxCap = max(LmaxCap, LmaxStart);
 
 % ---------- constants ----------
 n = n_in / n_ext;
-v = 299.7924589 / n_in;
+v = 299.792458 / n_in;   % speed of light in the medium [mm/ns]
 
 % ---------- isotropic shortcut ----------
-if lx == ly && lx == lz
-    lt = lx/(1-g);
+if musx == musy && musx == musz
+    lt = 1 / (musx * (1 - g));
     if n == 1
         ze = 2*lt/3;
     else
@@ -70,8 +158,13 @@ if lx == ly && lx == lz
     return
 end
 
-% ---------- anisotropic rates ----------
-mux = 1/lx;  muy = 1/ly;  muz = 1/lz;
+% ---------- anisotropic coefficients and mean free paths ----------
+mux = musx;
+muy = musy;
+muz = musz;
+lx  = 1 / musx;
+ly  = 1 / musy;
+lz  = 1 / musz;
 
 % ---------- quadrature grids ----------
 [chi_full, wchi] = gauss_legendre(Nchi);            % chi in [-1,1] (column)
@@ -87,7 +180,7 @@ SIN2 = ones(Nchi,1) * (sphi.^2);
 CHIf = chi_full * ones(1,Nphi);                     % Nchi x Nphi
 mu_f = mux.*(1-CHIf.^2).*COS2 + muy.*(1-CHIf.^2).*SIN2 + muz.*(CHIf.^2);
 invmu_f = 1 ./ mu_f;
-W_f = (wchi * ones(1,Nphi)) * wphi;                 % dΩ weights on full sphere
+W_f = (wchi * ones(1,Nphi)) * wphi;                 % dOmega weights on full sphere
 
 % direction-averaged mean free path <ell>
 lavg = (1/(4*pi)) * sum(sum(invmu_f .* W_f));
@@ -110,8 +203,8 @@ end
 R_h = Rchi * ones(1,Nphi);
 
 % ---------- boundary integrals (internal normalization: multiply by 1/lavg when needed) ----------
-B = (1/lavg) * sum(sum( (CHIh .* invmu_h) .* W_h ));                 % ∫_up P s_z dΩ
-X = (1/lavg) * sum(sum( (CHIh .* invmu_h .* R_h) .* W_h ));          % ∫_up P s_z R dΩ
+B = (1/lavg) * sum(sum( (CHIh .* invmu_h) .* W_h ));                 % int_up P s_z dOmega
+X = (1/lavg) * sum(sum( (CHIh .* invmu_h .* R_h) .* W_h ));          % int_up P s_z R dOmega
 
 denBC = (B - X);
 if ~(denBC > 0)
@@ -120,7 +213,7 @@ end
 
 % I2 and I2R for g=0 (hemi integrals used as Y|g=0 and C internal)
 I2  = (1/lavg) * sum(sum( (CHIh.^2 .* invmu_h.^2) .* W_h ));             % internal C
-I2R = (1/lavg) * sum(sum( (CHIh.^2 .* invmu_h.^2 .* R_h) .* W_h ));      % Y|g=0 (emisfero)
+I2R = (1/lavg) * sum(sum( (CHIh.^2 .* invmu_h.^2 .* R_h) .* W_h ));      % Y|g=0 (hemisphere)
 Y0 = I2R;
 Y  = Y0;
 
@@ -146,9 +239,9 @@ if g ~= 0
     normfac = 1/sqrt(2*pi);
 
     % Preweighted arrays:
-    % bulk (full-sphere) integrand for H: (s_z / mu) * dΩ on full grid
+    % bulk (full-sphere) integrand for H: (s_z / mu) * dOmega on full grid
     Bz_f   = (CHIf .* invmu_f) .* W_f;          % Nchi x Nphi
-    % hemi integrand for Htilde: (s_z / mu) * R(chi) * dΩ on hemi grid
+    % hemi integrand for Htilde: (s_z / mu) * R(chi) * dOmega on hemi grid
     Bz_hR  = (CHIh .* invmu_h .* R_h) .* W_h;   % Nchi x Nphi
 
     for l = 1:2:LmaxCap
@@ -179,7 +272,7 @@ if g ~= 0
             af_full = P_f(m+1,:).';    % Nchi x 1 (full chi grid)
             af_hemi = P_h(m+1,:).';    % Nchi x 1 (hemi chi grid)
 
-            % Condon–Shortley phase for consistency with spherical harmonics
+            % Condon-Shortley phase for consistency with spherical harmonics
             af_full = ((-1)^m) * af_full;
             af_hemi = ((-1)^m) * af_hemi;
 
@@ -253,17 +346,17 @@ if g ~= 0
     end
 end
 
-% C internal normalization (consistent with B,X,Y):
+% C internal normalization (consistent with B, X, Y)
 % In the paper C = D_z / v when Y is defined with 1/(2pi<ell>) prefactor;
-% here B,X,Y are computed with the internal normalization (1/lavg) so we
-% keep the C scaling consistent with the rest of the code:
+% here B, X, Y are computed with the internal normalization (1/lavg), so we
+% keep the C scaling consistent with the rest of the code.
 C = (2*pi/v) * Dz;
 
 % extrapolated length
 ze = (C + Y) / denBC;
 
 % ============================================================
-% z0 = lambda(z-hat) : odd-l Legendre-kernel series (unchanged)
+% z0 = lambda(z-hat) : odd-l Legendre-kernel series
 % ============================================================
 if g == 0
     z0 = lz;                               % exact
@@ -282,7 +375,7 @@ else
         Pl = legendre(l, chi_full);        % (l+1) x Nchi, unnormalized
         Pl0 = Pl(1,:).';                   % P_l(chi)
 
-        Il = sum( wchi .* (chi_full .* Pl0 .* invmu_phiInt) );  % ∫ chi P_l(chi)/mu dΩ
+        Il = sum( wchi .* (chi_full .* Pl0 .* invmu_phiInt) );  % int chi P_l(chi)/mu dOmega
         term = ((2*l+1)/(4*pi)) * (Il / denom);
 
         z0acc = real(z0acc + term);
@@ -312,6 +405,7 @@ if nargout > 2
     info = struct( ...
         'case','anisotropic', ...
         'n',n,'v',v,'lavg',lavg, ...
+        'musx',musx,'musy',musy,'musz',musz, ...
         'B',B,'X',X,'denBC',denBC, ...
         'I2',I2,'I2R',I2R, ...
         'Y0',Y0,'Y',Y, ...
