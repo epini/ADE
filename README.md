@@ -104,16 +104,44 @@ From the `python/` folder:
 pip install -e .
 ```
 
-### Minimal example
+## MATLAB xample: Time- and space-resolved transmittance in an anisotropic slab
 
-```python
-from generalized_ade import d_tensor_ade, bc_ade, r_ade, t_ade
+```matlab
+%% Medium parameters
+L     = 1.0;    % slab thickness [mm]
+n_in  = 1.3;    % internal refractive index [-]
+n_ext = 1.0;    % external refractive index [-]
+mua   = 0.01;   % absorption coefficient [mm^-1]
+musx = 30;      % scatt. coeff along x [mm^-1]
+musy = 100;     % scatt. coeff along y [mm^-1]
+musz = 50;      % scatt. coeff along z [mm^-1]
+g = 0.85        % Henyey-Greenstein asymmetry factor
 
-Dx, Dy, Dz = d_tensor_ade(1.4, 12.0, 8.0, 5.0, 0.85)
-ze, z0 = bc_ade(1.4, 1.0, 12.0, 8.0, 5.0, 0.85)
-R = r_ade(20.0, 1.4, 1.0, 12.0, 8.0, 5.0, 0.85, 0.01)
-T = t_ade(20.0, 1.4, 1.0, 12.0, 8.0, 5.0, 0.85, 0.01)
+%% Temporal and spatial grids
+dt = 0.01;     % time step [ns]  = 5 ps
+dx = 0.05;      % space step [mm] = 50 um
+t = 0.01:dt:1;  % time array [ns]
+x = -5:dx:5;       % x grid [mm]
+y = x;             % y grid [mm]
+
+%% Initial beam widths at t = 0
+sx = 0.01;      % [mm] = 10 um
+sy = 0.01;      % [mm] = 10 um
+
+Txyt = Txyt_ADE(x, y, t, L, n_in, n_ext, musx, musy, musz, g, sx, sy, mua)  * dt * dx^2;
+
+figure()
+for i = 1:numel(t)
+    imagesc(x, y, Txyt(:,:,i).');
+    axis image tight;
+    axis xy;
+    xlabel('x [mm]', 'FontSize', 16);
+    ylabel('y [mm]', 'FontSize', 16);
+    title(sprintf('Transmittance at t = %.3f ns', t(i)), 'FontSize', 16);
+    drawnow;
+end
 ```
+![Time-resolved reflectance example](figures/Txyt_animation.gif)
 
 ## Examples
 
