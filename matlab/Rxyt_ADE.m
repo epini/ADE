@@ -110,9 +110,13 @@ for k = 1:numel(tp)
     Gx = exp(-(x.^2) ./ denx);
     Gy = exp(-(y.^2) ./ deny);
 
-    pref = -1 / (2 * (4*pi)^(3/2) * tk^(5/2) * sqrt(Dx*Dy*Dz));
+    % normalized lateral Gaussian after convolution with diffusion
+    Gxy = (Gx * Gy) ./ (pi * sqrt(denx * deny));
 
-    Rxyt(:,:,idx(k)) = pref .* (Gx * Gy) .* abs(Rz(k)) .* exp(-v * tk * mua);
+    % longitudinal prefactor
+    pref_z = (1/4) * (pi * Dz * tk^3)^(-1/2);
+
+    Rxyt(:,:,idx(k)) = pref_z .* Gxy .* abs(Rz(k)) .* exp(-v * tk * mua);
 end
 
 end
