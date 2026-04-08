@@ -1,18 +1,17 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite the associated paper and this repository metadata."
-title: "Generalized ADE"
+message: "If you use this software, please cite it using the metadata below."
+title: "ADE"
+type: software
 authors:
   - family-names: "Pini"
     given-names: "Ernesto"
     affiliation: "Istituto Nazionale di Ricerca Metrologica (INRiM)"
     email: "pinie@lens.unifi.it"
+repository-code: "https://github.com/epini/ADE"
+url: "https://github.com/epini/ADE"
+license: "MIT"
 version: "0.1.0"
 date-released: 2026-04-08
-abstract: >-
-  MATLAB and Python implementations of the generalized anisotropic diffusion
-  equation for radiative transfer in fully anisotropic scattering slabs.
-repository-code: "https://github.com/<your-username>/<your-repo>"
-license: "MIT"
 references:
   - type: article
     authors:
@@ -21,4 +20,6 @@ references:
     title: "Generalized diffusion theory for radiative transfer in fully anisotropic scattering media"
     journal: "arXiv"
     year: 2026
-    article-number: "arXiv:2602.18963"
+    identifiers:
+      - type: arxiv
+        value: "2602.18963"
