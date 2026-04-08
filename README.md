@@ -104,7 +104,7 @@ From the `python/` folder:
 pip install -e .
 ```
 
-## MATLAB xample: Time- and space-resolved transmittance in an anisotropic slab
+## MATLAB example: Time- and space-resolved transmittance in an anisotropic slab
 
 ```matlab
 %% Medium parameters
