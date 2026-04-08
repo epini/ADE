@@ -92,10 +92,7 @@ p.addRequired('musy', @(x) validateattributes(x, {'numeric'}, {'real','finite','
 p.addRequired('musz', @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
 p.addRequired('g',    @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','>',-1,'<',1}));
 
-p.addOptional('LmaxStart', 15, @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
-if mod(LmaxStart,2)==0
-    LmaxStart = LmaxStart + 1;
-end
+p.addOptional('LmaxStart', 15,   @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
 p.addOptional('Nchi',      200,  @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
 p.addOptional('Nphi',      512,  @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
 p.addOptional('RelTol',    1e-5, @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
@@ -113,6 +110,10 @@ Nchi      = p.Results.Nchi;
 Nphi      = p.Results.Nphi;
 RelTol    = p.Results.RelTol;
 AbsTol    = p.Results.AbsTol;
+
+if mod(LmaxStart,2) == 0
+    LmaxStart = LmaxStart + 1;
+end
 
 % speed of light in the medium [mm/ns]
 v = 299.792458 / n_in;
