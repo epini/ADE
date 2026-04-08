@@ -1,58 +1,118 @@
-function Rxyt = Rxyt_ADE(x, y, t, L, n_in, n_ext, lx, ly, lz, sx, sy, mua)
-% RXYT_ADE time- and space-resolved reflectance from an index-matched turbid slab
+function Rxyt = Rxyt_ADE(x, y, t, L, n_in, n_ext, musx, musy, musz, g, sx, sy, mua)
+%RXYT_ADE Time- and space-resolved diffuse reflectance from an anisotropic slab.
 %
-% Brief: this function returns the time- and space-resolved reflectance 
-% R(x,y,t) for an anisotropic slab of thickness L [μm].
-% xy is the slab plane, while z is the direction of incidence of the pencil beam.
-% If a refractive index contrast is set, the effect of Fresnel
-% reflections at the boundaries is considered. Absorption is considered to 
-% be uniform, mua [1/μm].
-% t is an array of times [ps], while lx, ly and lz are scalars [μm].
-% sx and sy are the initial standard deviation [μm] of the 2D intensity 
-% gaussian distribution at t = 0 along x and y.
-% 
-% Inputs:
-%    x - array of positions [μm]
-%    y - array of positions [μm]
-%    t - array of times [ps]
-%    L - slab thickness [μm]
-%    n_in - refractive index of the diffusive medium
-%    n_ext - refractive index of the external medium
-%    lx - scattering mean free path along x [μm]
-%    ly - scattering mean free path along y [μm]
-%    lz - scattering mean free path along z [μm]
-%    sx - standard deviation a t = 0 along x [μm]
-%    sy - standard deviation a t = 0 along y [μm]
-%    mua - absorption rate [1/μm]
-% 
-% Outputs:
-%    Rxyt - 2D-array of time- and space-resolved reflectance R(x,y,t)
-% 
-% See also: time_space_resolved_refl_trans.m
+%   Rxyt = RXYT_ADE(x, y, t, L, n_in, n_ext, musx, musy, musz, g, sx, sy, mua)
+%
+%   Computes the time- and space-resolved diffuse reflectance R(x,y,t) of
+%   a slab described by the anisotropic diffusion equation (ADE). The slab
+%   lies in the xy plane, with thickness L along z, and is illuminated by a
+%   normally incident beam along the z direction. Refractive-index mismatch
+%   at the boundaries is accounted for through extrapolated boundary
+%   conditions.
+%
+%   A Gaussian lateral profile at t = 0 is included through the initial
+%   standard deviations sx and sy along x and y.
+%
+%   Units convention:
+%     lengths in mm, optical coefficients in mm^-1, time in ns.
+%
+%   Inputs
+%   ------
+%   x       - x coordinates in the slab plane [mm, real vector].
+%   y       - y coordinates in the slab plane [mm, real vector].
+%   t       - Time array [ns, real vector].
+%   L       - Slab thickness [mm, positive scalar].
+%   n_in    - Refractive index of the diffusive medium [dimensionless scalar].
+%   n_ext   - Refractive index of the external medium [dimensionless scalar].
+%   musx    - Scattering coefficient along x [mm^-1, positive scalar].
+%   musy    - Scattering coefficient along y [mm^-1, positive scalar].
+%   musz    - Scattering coefficient along z [mm^-1, positive scalar].
+%   g       - Henyey-Greenstein asymmetry factor [dimensionless scalar,
+%             -1 < g < 1].
+%   sx      - Initial standard deviation along x at t = 0 [mm, non-negative scalar].
+%   sy      - Initial standard deviation along y at t = 0 [mm, non-negative scalar].
+%   mua     - Absorption coefficient [mm^-1, non-negative scalar].
+%
+%   Output
+%   ------
+%   Rxyt    - Time- and space-resolved diffuse reflectance evaluated on the
+%             grid defined by x, y and t
+%             [mm^-2 ns^-1, numel(x)-by-numel(y)-by-numel(t) array].
+%
+%   Notes
+%   -----
+%   The diffusion coefficients Dx, Dy, Dz are obtained from D_Tensor_ADE,
+%   and the boundary parameters ze and z0 are obtained from BC_ADE.
+%
+%   For t <= 0, the function returns Rxyt = 0.
+%
+%   Reference
+%   ---------
+%   E. Pini et al., "Generalized diffusion theory for radiative transfer
+%   in fully anisotropic scattering media." arXiv preprint
+%   arXiv:2602.18963 (2026).
+%
+%   Author:       Ernesto Pini
+%   Affiliation:  Istituto Nazionale di Ricerca Metrologica (INRiM)
+%   Email:        pinie@lens.unifi.it
 
-% Author:       Ernesto Pini
-% Affiliation:  Department of Physics and Astronomy, Università di Firenze
-% Email:        pinie@lens.unifi.it
+validateattributes(x,     {'numeric'}, {'real','finite','vector'});
+validateattributes(y,     {'numeric'}, {'real','finite','vector'});
+validateattributes(t,     {'numeric'}, {'real','finite','vector'});
+validateattributes(L,     {'numeric'}, {'real','finite','scalar','positive'});
+validateattributes(n_in,  {'numeric'}, {'real','finite','scalar','positive'});
+validateattributes(n_ext, {'numeric'}, {'real','finite','scalar','positive'});
+validateattributes(musx,  {'numeric'}, {'real','finite','scalar','positive'});
+validateattributes(musy,  {'numeric'}, {'real','finite','scalar','positive'});
+validateattributes(musz,  {'numeric'}, {'real','finite','scalar','positive'});
+validateattributes(g,     {'numeric'}, {'real','finite','scalar','>',-1,'<',1});
+validateattributes(sx,    {'numeric'}, {'real','finite','scalar','nonnegative'});
+validateattributes(sy,    {'numeric'}, {'real','finite','scalar','nonnegative'});
+validateattributes(mua,   {'numeric'}, {'real','finite','scalar','nonnegative'});
 
-[Dx, Dy, Dz] = D_Tensor_ADE(n_in, lx, ly, lz, g);
-[ze, z0] = BC_ADE(n_in, n_ext, lx, ly, lz, g);
+[Dx, Dy, Dz] = D_Tensor_ADE(n_in, musx, musy, musz, g);
+[ze, z0]     = BC_ADE(n_in, n_ext, musx, musy, musz, g);
 
-v = 299.7924589/n_in;
+v = 299.792458 / n_in;   % speed of light in the medium [mm/ns]
 
-R = zeros(size(t));
-Rxyt = zeros(length(x),length(y),length(t));
+x = x(:);
+y = y(:).';
+t = t(:);
+
+Nx = numel(x);
+Ny = numel(y);
+Nt = numel(t);
+
+Rxyt = zeros(Nx, Ny, Nt);
+
+idx = find(t > 0);
+if isempty(idx)
+    return;
+end
+
+tp = t(idx);
+Rz = zeros(size(tp));
 
 M = 10000; % number of virtual sources considered in the expansion
 for m = -M:M
     z3 = -2*m*L - 4*m*ze - z0;
     z4 = -2*m*L - (4*m - 2)*ze + z0;
-    R = R + (z3*exp(-(z3)^2./(4*Dz*t)) - z4*exp(-(z4)^2./(4*Dz*t)));
+    Rz = Rz + z3 .* exp(-(z3^2) ./ (4 * Dz * tp)) ...
+            - z4 .* exp(-(z4^2) ./ (4 * Dz * tp));
 end
 
-j = 1;
-for i = 1:length(t)
-    t2 = t(i);
-    Rxyt(:,:,j) = -exp(-x.^2./(2*sx^2+4*Dx*t2)).*(exp(-y.^2./(2*sy^2+4*Dy*t2))).'./((2*(4*pi)^(3/2)*t2^(5/2)*(Dx*Dy*Dz)^(1/2))).*R(j).'.*exp(-v*t2*mua);
-    j = j + 1;
+for k = 1:numel(tp)
+    tk = tp(k);
+
+    denx = 2*sx^2 + 4*Dx*tk;
+    deny = 2*sy^2 + 4*Dy*tk;
+
+    Gx = exp(-(x.^2) ./ denx);
+    Gy = exp(-(y.^2) ./ deny);
+
+    pref = -1 / (2 * (4*pi)^(3/2) * tk^(5/2) * sqrt(Dx*Dy*Dz));
+
+    Rxyt(:,:,idx(k)) = pref .* (Gx * Gy) .* Rz(k) .* exp(-v * tk * mua);
 end
+
 end

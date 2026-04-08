@@ -93,10 +93,10 @@ p.addRequired('musz', @(x) validateattributes(x, {'numeric'}, {'real','finite','
 p.addRequired('g',    @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','>',-1,'<',1}));
 
 p.addOptional('LmaxStart', 15, @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
+...
 if mod(LmaxStart,2)==0
     LmaxStart = LmaxStart + 1;
-end
-p.addOptional('Nchi',      200,  @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
+endp.addOptional('Nchi',      200,  @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
 p.addOptional('Nphi',      512,  @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','integer','positive'}));
 p.addOptional('RelTol',    1e-5, @(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','positive'}));
 p.addOptional('AbsTol',    1e-10,@(x) validateattributes(x, {'numeric'}, {'real','finite','scalar','nonnegative'}));
