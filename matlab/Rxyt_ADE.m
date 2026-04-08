@@ -112,7 +112,7 @@ for k = 1:numel(tp)
 
     pref = -1 / (2 * (4*pi)^(3/2) * tk^(5/2) * sqrt(Dx*Dy*Dz));
 
-    Rxyt(:,:,idx(k)) = pref .* (Gx * Gy) .* Rz(k) .* exp(-v * tk * mua);
+    Rxyt(:,:,idx(k)) = pref .* (Gx * Gy) .* abs(Rz(k)) .* exp(-v * tk * mua);
 end
 
 end

@@ -75,7 +75,7 @@ else
               - sign(z4) * exp(-abs(z4) * kappa);
     end
 
-    R = -R / 2;
+    R = - abs(R / 2);
 
 end
 

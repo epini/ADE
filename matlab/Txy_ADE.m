@@ -85,6 +85,6 @@ for m = -M:M
         - z2 .* arg2.^(-3/2) .* (1 + s2) .* exp(-s2);
 end
 
-Txy = Txy / (4 * pi * D^(3/2));
+Txy = abs(Txy) / (4 * pi * D^(3/2));
 
 end

@@ -80,6 +80,6 @@ for m = -M:M
       - z4 .* exp(-(z4.^2) ./ (4 * Dz * tp)) );
 end
 
-Rt(idx) = -(1/4) .* (pi .* Dz .* tp.^3).^(-1/2) .* Rsum .* exp(-v .* tp .* mua);
+Rt(idx) = -(1/4) .* (pi .* Dz .* tp.^3).^(-1/2) .* abs(Rsum) .* exp(-v .* tp .* mua);
 
 end

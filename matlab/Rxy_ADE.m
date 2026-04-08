@@ -85,6 +85,6 @@ for m = -M:M
         - z4 .* arg4.^(-3/2) .* (1 + s4) .* exp(-s4);
 end
 
-Rxy = -Rxy / (4 * pi * D^(3/2));
+Rxy = -abs(Rxy) / (4 * pi * D^(3/2));
 
 end
