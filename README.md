@@ -118,11 +118,11 @@ musz = 50;      % scatt. coeff along z [mm^-1]
 g = 0.85        % Henyey-Greenstein asymmetry factor
 
 %% Temporal and spatial grids
-dt = 0.01;     % time step [ns]  = 5 ps
+dt = 0.01;      % time step [ns]  = 5 ps
 dx = 0.05;      % space step [mm] = 50 um
 t = 0.01:dt:1;  % time array [ns]
-x = -5:dx:5;       % x grid [mm]
-y = x;             % y grid [mm]
+x = -5:dx:5;    % x grid [mm]
+y = x;          % y grid [mm]
 
 %% Initial beam widths at t = 0
 sx = 0.01;      % [mm] = 10 um
