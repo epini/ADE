@@ -143,6 +143,54 @@ end
 ```
 ![Time-resolved reflectance example](figures/Txyt_animation.gif)
 
+## Example: Time-resolved transmittance at different locations in an anisotropic slab
+
+```matlab
+%% Medium parameters
+L     = 1.0;    % slab thickness [mm]
+n_in  = 1.3;    % internal refractive index [-]
+n_ext = 1.0;    % external refractive index [-]
+mua   = 0.01;   % absorption coefficient [mm^-1]
+musx = 200;      % scatt. coeff along x [mm^-1]
+musy = 1000;     % scatt. coeff along y [mm^-1]
+musz = 500;      % scatt. coeff along z [mm^-1]
+g = 0.85;       % Henyey-Greenstein asymmetry factor
+
+%% Temporal and spatial grids
+dt = 0.01;      % time step [ns]  = 5 ps
+dx = 0.4;      % space step [mm] = 50 um
+t = 0.01:dt:1;  % time array [ns]
+x = 0.4:dx:2.0; % x collection positions [mm]
+y = x;          % y collection positions [mm]
+
+%% Initial beam widths at t = 0
+sx = 0.01;      % [mm] = 10 um
+sy = 0.01;      % [mm] = 10 um
+
+Txyt_x = squeeze(Txyt_ADE(x, 0, t, L, n_in, n_ext, musx, musy, musz, g, sx, sy, mua)).' * dt;
+Txyt_y = squeeze(Txyt_ADE(0, y, t, L, n_in, n_ext, musx, musy, musz, g, sx, sy, mua)).' * dt;
+
+figure()
+tl = tiledlayout(1, 2, 'Padding', 'compact', 'TileSpacing', 'compact');
+
+nexttile, hold on, grid on, box on
+title('TR transmittance in (x₀, 0) [μm]')
+plot(t, Txyt_x, 'LineWidth', 1)
+set(gca, 'YScale', 'log')
+xlabel('t [ps]'), ylabel('Intensity [a.u.]')
+axis([0 max(t) 1e-15 5e-10])
+legend(arrayfun(@(xi) sprintf('(%.0f, 0)', xi), x, 'UniformOutput', false), 'Location', 'northeast')
+
+nexttile, hold on, grid on, box on
+title('TR transmittance in (0, y₀) [μm]')
+plot(t, Txyt_y, 'LineWidth', 1)
+set(gca, 'YScale', 'log')
+xlabel('t [ps]'), ylabel('Intensity [a.u.]')
+axis([0 max(t) 1e-15 5e-10])
+legend(arrayfun(@(yi) sprintf('(0, %.0f)', yi), y, 'UniformOutput', false), 'Location', 'northeast')
+```
+![Time-resolved reflectance example](figures/example_Txyt.png)
+
 ## Examples
 
 - MATLAB: `matlab/examples/demo_general_anisotropic.m`
