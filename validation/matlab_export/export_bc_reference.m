@@ -1,5 +1,7 @@
 function export_bc_reference()
 %EXPORT_BC_REFERENCE Export MATLAB BC_ADE benchmark values to JSON.
+% NOTE: python/tests/test_boundary_reference.py expects a top-level JSON
+% array. Keep the test reader in sync if this schema changes.
 
 cases = {
     struct('name','iso_nmatch_g0',   'n_in',1.4,'n_ext',1.4,'musx',10.0,'musy',10.0,'musz',10.0,'g',0.0), ...

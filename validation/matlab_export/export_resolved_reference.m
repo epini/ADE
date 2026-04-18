@@ -5,6 +5,9 @@ function export_resolved_reference()
 %   functions and saves them to resolved_reference.json in the current
 %   folder. Units convention:
 %     lengths in mm, optical coefficients in mm^-1, time in ns.
+%   NOTE: python/tests/test_resolved_reference.py expects the nested
+%   params/total/time/space/spacetime JSON schema written here. Keep the
+%   exporter and test reader in sync if this structure changes.
 
 out = struct();
 

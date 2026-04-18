@@ -3,6 +3,8 @@
 %
 % Run this script from MATLAB with the repository root or matlab/ folder on
 % the path. It writes d_tensor_reference.json in the current folder.
+% NOTE: python/tests/test_diffusion_reference.py expects a top-level JSON
+% array. Keep the test reader in sync if this schema changes.
 
 clear; clc;
 

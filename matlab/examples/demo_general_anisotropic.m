@@ -73,8 +73,18 @@ fprintf('  D_Tensor_ADE converged: %d\n', infoD.converged);
 if isfield(infoD, 'LmaxUsed')
     fprintf('  D_Tensor_ADE LmaxUsed:  %d\n', infoD.LmaxUsed);
 end
-if isfield(infoBC, 'LmaxUsed')
-    fprintf('  BC_ADE LmaxUsed:        %d\n', infoBC.LmaxUsed);
+if all(isfield(infoBC, {'convergedDz', 'convergedY', 'convergedZ0'}))
+    fprintf('  BC_ADE converged:       Dz=%d  Y=%d  z0=%d\n', ...
+        infoBC.convergedDz, infoBC.convergedY, infoBC.convergedZ0);
+end
+if isfield(infoBC, 'LmaxUsedDz')
+    fprintf('  BC_ADE LmaxUsedDz:      %d\n', infoBC.LmaxUsedDz);
+end
+if isfield(infoBC, 'LmaxUsedY')
+    fprintf('  BC_ADE LmaxUsedY:       %d\n', infoBC.LmaxUsedY);
+end
+if isfield(infoBC, 'LmaxUsedZ0')
+    fprintf('  BC_ADE LmaxUsedZ0:      %d\n', infoBC.LmaxUsedZ0);
 end
 fprintf('------------------------------------------------------------\n');
 
@@ -108,8 +118,8 @@ Rxy = Rxy_ADE(x, y, L, n_in, n_ext, musx, musy, musz, g, mua);
 Txy = Txy_ADE(x, y, L, n_in, n_ext, musx, musy, musz, g, mua);
 
 % Make sure maps are arranged as (y,x) for plotting
-Rxy = ensureYX2D(Rxy, x, y, 'Rxy_ADE').';
-Txy = ensureYX2D(Txy, x, y, 'Txy_ADE').';
+Rxy = ensureYX2D(Rxy, x, y, 'Rxy_ADE');
+Txy = ensureYX2D(Txy, x, y, 'Txy_ADE');
 
 % Floors for logarithmic visualization
 Rxy_log = log10(max(Rxy, realmin));
@@ -168,9 +178,6 @@ Rxyt = Rxyt_ADE(x, y, t, L, n_in, n_ext, musx, musy, musz, g, sx, sy, mua);
 Txyt = Txyt_ADE(x, y, t, L, n_in, n_ext, musx, musy, musz, g, sx, sy, mua);
 
 % Make sure arrays are arranged as (y,x,t)
-Rxyt = permute(Rxyt, [2 1 3]);
-Txyt = permute(Txyt, [2 1 3]);
-
 Rxyt = ensureYX3D(Rxyt, x, y, t, 'Rxyt_ADE');
 Txyt = ensureYX3D(Txyt, x, y, t, 'Txyt_ADE');
 

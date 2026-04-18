@@ -13,10 +13,11 @@ This package mirrors the MATLAB implementation in the repository and uses the sa
 From the `python/` folder of the repository:
 
 ```bash
-pip install -e .
+python -m pip install -e . --no-build-isolation
 ```
 
 This installs the package in editable mode, which is convenient during development.
+In a typical networked environment, `python -m pip install -e .` also works.
 
 ## Package structure
 
@@ -55,6 +56,9 @@ from generalized_ade import (
 )
 ```
 
+The installable public API lives in `src/generalized_ade/`. The top-level
+`python/` directory is project scaffolding, not a second import package.
+
 ## Minimal example
 
 ```python
@@ -85,10 +89,10 @@ This makes plotting straightforward with `matplotlib.imshow(..., extent=[xmin, x
 
 ## Tests
 
-Run from the `python/` folder:
+Run from the `python/` folder after the editable install:
 
 ```bash
-pytest
+python -m pytest -q
 ```
 
 The repository includes:
@@ -97,6 +101,9 @@ The repository includes:
 - reference tests against MATLAB benchmark data
 
 Reference JSON files are stored in `python/tests/reference/`.
+Their readers are intentionally kept in sync with the exporters in
+`validation/matlab_export/`; if one side's JSON schema changes, update the
+other in the same change.
 
 ## Example script
 

@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-import numpy as np
 import pytest
 
 from generalized_ade import d_tensor_ade
@@ -19,9 +18,10 @@ def test_diffusion_against_matlab_reference():
     if not REFERENCE.exists():
         pytest.skip("d_tensor_reference.json not found.")
 
-    data = json.loads(REFERENCE.read_text())
+    # export_d_tensor_reference.m writes a top-level JSON array of cases.
+    cases = json.loads(REFERENCE.read_text())
     max_rel = 0.0
-    for case in data["cases"]:
+    for case in cases:
         dx, dy, dz = d_tensor_ade(
             case["n_in"], case["musx"], case["musy"], case["musz"], case["g"]
         )

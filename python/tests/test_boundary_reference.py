@@ -18,9 +18,10 @@ def test_boundary_against_matlab_reference():
     if not REFERENCE.exists():
         pytest.skip("bc_reference.json not found.")
 
-    data = json.loads(REFERENCE.read_text())
+    # export_bc_reference.m writes a top-level JSON array of cases.
+    cases = json.loads(REFERENCE.read_text())
     max_rel = 0.0
-    for case in data["cases"]:
+    for case in cases:
         ze, z0 = bc_ade(
             case["n_in"], case["n_ext"], case["musx"], case["musy"], case["musz"], case["g"]
         )

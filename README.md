@@ -25,6 +25,12 @@ Accordingly:
 - space-resolved signals are in `mm^-2`
 - time- and space-resolved signals are in `mm^-2 ns^-1`
 
+For resolved outputs, the numerical values match between MATLAB and Python, but
+the array layout is not identical: Python returns `(ny, nx)` or `(ny, nx, nt)`
+arrays, while the MATLAB functions natively return
+`numel(x)`-by-`numel(y)` or `numel(x)`-by-`numel(y)`-by-`numel(t)` arrays and
+the MATLAB examples transpose or permute them for plotting.
+
 ## Repository structure
 
 ```text
@@ -65,6 +71,10 @@ Generalized ADE/
         └── export_d_tensor_reference.m
 ```
 
+Additional validation exporters live in `validation/matlab_export/`:
+`export_bc_reference.m`, `export_d_tensor_reference.m`, and
+`export_resolved_reference.m`.
+
 ## MATLAB functions
 
 ### Core coefficients
@@ -88,7 +98,7 @@ Generalized ADE/
 
 ## Python package
 
-The Python package mirrors the MATLAB implementation and exposes:
+The Python package matches the MATLAB implementation numerically and exposes:
 
 - `gauss_legendre`
 - `d_tensor_ade`
@@ -101,8 +111,10 @@ The Python package mirrors the MATLAB implementation and exposes:
 From the `python/` folder:
 
 ```bash
-pip install -e .
+python -m pip install -e . --no-build-isolation
 ```
+
+In a typical networked environment, `python -m pip install -e .` also works.
 
 ## MATLAB example: Time- and space-resolved transmittance in an anisotropic slab
 
@@ -115,10 +127,10 @@ mua   = 0.01;   % absorption coefficient [mm^-1]
 musx = 30;      % scatt. coeff along x [mm^-1]
 musy = 100;     % scatt. coeff along y [mm^-1]
 musz = 50;      % scatt. coeff along z [mm^-1]
-g = 0.85        % Henyey-Greenstein asymmetry factor
+g = 0.85;       % Henyey-Greenstein asymmetry factor
 
 %% Temporal and spatial grids
-dt = 0.01;      % time step [ns]  = 5 ps
+dt = 0.01;      % time step [ns]  = 10 ps
 dx = 0.05;      % space step [mm] = 50 um
 t = 0.01:dt:1;  % time array [ns]
 x = -5:dx:5;    % x grid [mm]
@@ -141,7 +153,7 @@ for i = 1:numel(t)
     drawnow;
 end
 ```
-![Time-resolved reflectance example](figures/Txyt_animation.gif)
+![Time-resolved transmittance example](figures/Txyt_animation.gif)
 
 ## Example: Time-resolved transmittance at different locations in an anisotropic slab
 
@@ -157,8 +169,8 @@ musz = 500;      % scatt. coeff along z [mm^-1]
 g = 0.85;       % Henyey-Greenstein asymmetry factor
 
 %% Temporal and spatial grids
-dt = 0.01;      % time step [ns]  = 5 ps
-dx = 0.4;      % space step [mm] = 50 um
+dt = 0.01;      % time step [ns]  = 10 ps
+dx = 0.4;       % space step [mm] = 400 um
 t = 0.01:dt:1;  % time array [ns]
 x = 0.4:dx:2.0; % x collection positions [mm]
 y = x;          % y collection positions [mm]
@@ -174,22 +186,22 @@ figure()
 tl = tiledlayout(1, 2, 'Padding', 'compact', 'TileSpacing', 'compact');
 
 nexttile, hold on, grid on, box on
-title('TR transmittance in (x₀, 0) [μm]')
+title('TR transmittance in (x_0, 0) [mm]')
 plot(t, Txyt_x, 'LineWidth', 1)
 set(gca, 'YScale', 'log')
-xlabel('t [ps]'), ylabel('Intensity [a.u.]')
+xlabel('t [ns]'), ylabel('Signal [mm^{-2}]')
 axis([0 max(t) 1e-15 5e-10])
 legend(arrayfun(@(xi) sprintf('(%.0f, 0)', xi), x, 'UniformOutput', false), 'Location', 'northeast')
 
 nexttile, hold on, grid on, box on
-title('TR transmittance in (0, y₀) [μm]')
+title('TR transmittance in (0, y_0) [mm]')
 plot(t, Txyt_y, 'LineWidth', 1)
 set(gca, 'YScale', 'log')
-xlabel('t [ps]'), ylabel('Intensity [a.u.]')
+xlabel('t [ns]'), ylabel('Signal [mm^{-2}]')
 axis([0 max(t) 1e-15 5e-10])
 legend(arrayfun(@(yi) sprintf('(0, %.0f)', yi), y, 'UniformOutput', false), 'Location', 'northeast')
 ```
-![Time-resolved reflectance example](figures/example_Txyt.png)
+![Time-resolved transmittance example](figures/example_Txyt.png)
 
 ## Examples
 

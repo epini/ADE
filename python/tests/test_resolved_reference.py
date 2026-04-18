@@ -32,44 +32,47 @@ def test_resolved_against_matlab_reference():
     if not REFERENCE.exists():
         pytest.skip("resolved_reference.json not found.")
 
+    # export_resolved_reference.m writes nested params/total/time/space/spacetime sections.
     data = json.loads(REFERENCE.read_text())
     p = data["params"]
-    x = np.asarray(data["x_mm"], dtype=float)
-    y = np.asarray(data["y_mm"], dtype=float)
-    t = np.asarray(data["t_ns"], dtype=float)
-
     max_rel = 0.0
 
     R = r_ade(p["L"], p["n_in"], p["n_ext"], p["musx"], p["musy"], p["musz"], p["g"], p["mua"])
     T = t_ade(p["L"], p["n_in"], p["n_ext"], p["musx"], p["musy"], p["musz"], p["g"], p["mua"])
-    max_rel = max(max_rel, rel_err_array(R, data["R"]))
-    max_rel = max(max_rel, rel_err_array(T, data["T"]))
+    max_rel = max(max_rel, rel_err_array(R, data["total"]["R"]))
+    max_rel = max(max_rel, rel_err_array(T, data["total"]["T"]))
 
+    t = np.asarray(data["time"]["t"], dtype=float)
     Rt = rt_ade(t, p["L"], p["n_in"], p["n_ext"], p["musx"], p["musy"], p["musz"], p["g"], p["mua"])
     Tt = tt_ade(t, p["L"], p["n_in"], p["n_ext"], p["musx"], p["musy"], p["musz"], p["g"], p["mua"])
-    max_rel = max(max_rel, rel_err_array(Rt, data["Rt"]))
-    max_rel = max(max_rel, rel_err_array(Tt, data["Tt"]))
+    max_rel = max(max_rel, rel_err_array(Rt, data["time"]["Rt"]))
+    max_rel = max(max_rel, rel_err_array(Tt, data["time"]["Tt"]))
 
+    x = np.asarray(data["space"]["x"], dtype=float)
+    y = np.asarray(data["space"]["y"], dtype=float)
     Rxy = _maybe_fix_orientation(
         rxy_ade(x, y, p["L"], p["n_in"], p["n_ext"], p["musx"], p["musy"], p["musz"], p["g"], p["mua"]),
-        np.asarray(data["Rxy"]).shape,
+        np.asarray(data["space"]["Rxy"]).shape,
     )
     Txy = _maybe_fix_orientation(
         txy_ade(x, y, p["L"], p["n_in"], p["n_ext"], p["musx"], p["musy"], p["musz"], p["g"], p["mua"]),
-        np.asarray(data["Txy"]).shape,
+        np.asarray(data["space"]["Txy"]).shape,
     )
-    max_rel = max(max_rel, rel_err_array(Rxy, data["Rxy"]))
-    max_rel = max(max_rel, rel_err_array(Txy, data["Txy"]))
+    max_rel = max(max_rel, rel_err_array(Rxy, data["space"]["Rxy"]))
+    max_rel = max(max_rel, rel_err_array(Txy, data["space"]["Txy"]))
 
+    x = np.asarray(data["spacetime"]["x"], dtype=float)
+    y = np.asarray(data["spacetime"]["y"], dtype=float)
+    t = np.asarray(data["spacetime"]["t"], dtype=float)
     Rxyt = _maybe_fix_orientation(
         rxyt_ade(x, y, t, p["L"], p["n_in"], p["n_ext"], p["musx"], p["musy"], p["musz"], p["g"], p["sx"], p["sy"], p["mua"]),
-        np.asarray(data["Rxyt"]).shape,
+        np.asarray(data["spacetime"]["Rxyt"]).shape,
     )
     Txyt = _maybe_fix_orientation(
         txyt_ade(x, y, t, p["L"], p["n_in"], p["n_ext"], p["musx"], p["musy"], p["musz"], p["g"], p["sx"], p["sy"], p["mua"]),
-        np.asarray(data["Txyt"]).shape,
+        np.asarray(data["spacetime"]["Txyt"]).shape,
     )
-    max_rel = max(max_rel, rel_err_array(Rxyt, data["Rxyt"]))
-    max_rel = max(max_rel, rel_err_array(Txyt, data["Txyt"]))
+    max_rel = max(max_rel, rel_err_array(Rxyt, data["spacetime"]["Rxyt"]))
+    max_rel = max(max_rel, rel_err_array(Txyt, data["spacetime"]["Txyt"]))
 
     assert max_rel < 1e-9
