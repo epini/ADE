@@ -132,7 +132,7 @@ g = 0.85;       % Henyey-Greenstein asymmetry factor
 %% Temporal and spatial grids
 dt = 0.01;      % time step [ns]  = 10 ps
 dx = 0.05;      % space step [mm] = 50 um
-t = 0.01:dt:1;  % time array [ns]
+t = 0.01:dt:0.5;  % time array [ns]
 x = -5:dx:5;    % x grid [mm]
 y = x;          % y grid [mm]
 
