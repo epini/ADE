@@ -47,3 +47,9 @@ def test_smoke_all_functions_run():
     assert Txy.shape == (y.size, x.size)
     assert Rxyt.shape == (y.size, x.size, t.size)
     assert Txyt.shape == (y.size, x.size, t.size)
+
+
+@pytest.mark.smoke
+def test_warns_for_transport_thin_regime():
+    with pytest.warns(RuntimeWarning, match=r"diffusion approximation"):
+        t_ade(0.5, 1.37, 1.32, 5.58, 4.03, 1.06, 0.30, 7e-4)

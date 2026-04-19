@@ -6,7 +6,13 @@ from typing import Any
 import numpy as np
 
 from .boundary import bc_ade
-from .diffusion import C0_MM_PER_NS, _require_nonnegative_scalar, _require_positive_scalar, d_tensor_ade
+from .diffusion import (
+    C0_MM_PER_NS,
+    _require_nonnegative_scalar,
+    _require_positive_scalar,
+    _warn_if_transport_thin_regime,
+    d_tensor_ade,
+)
 
 _NUM_VIRTUAL_SOURCES = 10000
 
@@ -67,6 +73,7 @@ def r_ade(
     if not np.isfinite(g) or not (-1.0 < g < 1.0):
         raise ValueError("g must satisfy -1 < g < 1.")
 
+    _warn_if_transport_thin_regime(L, musz, g)
     _, _, dz = d_tensor_ade(n_in, musx, musy, musz, g)
     ze, z0 = bc_ade(n_in, n_ext, musx, musy, musz, g)
 
@@ -157,6 +164,7 @@ def rt_ade(
     if not np.isfinite(g) or not (-1.0 < g < 1.0):
         raise ValueError("g must satisfy -1 < g < 1.")
 
+    _warn_if_transport_thin_regime(L, musz, g)
     _, _, dz = d_tensor_ade(n_in, musx, musy, musz, g)
     ze, z0 = bc_ade(n_in, n_ext, musx, musy, musz, g)
     v = C0_MM_PER_NS / n_in
@@ -242,6 +250,7 @@ def rxy_ade(
     if not np.isfinite(g) or not (-1.0 < g < 1.0):
         raise ValueError("g must satisfy -1 < g < 1.")
 
+    _warn_if_transport_thin_regime(L, musz, g)
     dx, dy, dz = d_tensor_ade(n_in, musx, musy, musz, g)
     ze, z0 = bc_ade(n_in, n_ext, musx, musy, musz, g)
     v = C0_MM_PER_NS / n_in
@@ -345,6 +354,7 @@ def rxyt_ade(
     if not np.isfinite(g) or not (-1.0 < g < 1.0):
         raise ValueError("g must satisfy -1 < g < 1.")
 
+    _warn_if_transport_thin_regime(L, musz, g)
     dx, dy, dz = d_tensor_ade(n_in, musx, musy, musz, g)
     ze, z0 = bc_ade(n_in, n_ext, musx, musy, musz, g)
     v = C0_MM_PER_NS / n_in

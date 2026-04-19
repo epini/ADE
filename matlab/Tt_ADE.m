@@ -57,6 +57,7 @@ validateattributes(musz,  {'numeric'}, {'real','finite','scalar','positive'});
 validateattributes(g,     {'numeric'}, {'real','finite','scalar','>',-1,'<',1});
 validateattributes(mua,   {'numeric'}, {'real','finite','scalar','nonnegative'});
 
+warn_transport_thin_regime(L, musz, g);
 [~, ~, Dz] = D_Tensor_ADE(n_in, musx, musy, musz, g);
 [ze, z0]   = BC_ADE(n_in, n_ext, musx, musy, musz, g);
 

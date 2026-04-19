@@ -11,6 +11,7 @@ from .quadrature import gauss_legendre
 
 
 C0_MM_PER_NS = 299.792458
+_TRANSPORT_THIN_WARNING_THRESHOLD = 1.0
 
 
 def _require_positive_scalar(name: str, value: float) -> float:
@@ -34,6 +35,21 @@ def _require_int(name: str, value: int, *, positive: bool = False) -> int:
     if positive and value <= 0:
         raise ValueError(f"{name} must be a positive integer.")
     return value
+
+
+def _warn_if_transport_thin_regime(L: float, musz: float, g: float) -> float:
+    """Warn when the reduced optical thickness along z is below unity."""
+    reduced_optical_thickness_z = L * musz * (1.0 - g)
+    if reduced_optical_thickness_z < _TRANSPORT_THIN_WARNING_THRESHOLD:
+        warnings.warn(
+            "Reduced optical thickness along z is such that "
+            f"L*musz*(1-g) = {reduced_optical_thickness_z:.3g} < "
+            f"{_TRANSPORT_THIN_WARNING_THRESHOLD:g}. These parameters lie well "
+            "beyond the usual validity range of the diffusion approximation, "
+            "so the outputs may exhibit nonphysical sign instabilities.",
+            RuntimeWarning,
+        )
+    return reduced_optical_thickness_z
 
 
 def d_tensor_ade(
