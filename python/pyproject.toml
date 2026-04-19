@@ -27,12 +27,3 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.pytest.ini_options]
-minversion = "8.0"
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-markers = [
-  "smoke: quick smoke tests",
-  "reference: tests against MATLAB reference JSON files",
-]

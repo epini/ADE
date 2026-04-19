@@ -17,7 +17,7 @@
 
 clear; close all; clc;
 
-%% Add repository root to path
+%% Add MATLAB folder to path
 thisDir = fileparts(mfilename('fullpath'));
 repoRoot = fileparts(thisDir);
 addpath(repoRoot);

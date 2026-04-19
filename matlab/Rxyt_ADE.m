@@ -116,7 +116,7 @@ for k = 1:numel(tp)
     % longitudinal prefactor
     pref_z = (1/4) * (pi * Dz * tk^3)^(-1/2);
 
-    Rxyt(:,:,idx(k)) = pref_z .* Gxy .* abs(Rz(k)) .* exp(-v * tk * mua);
+    Rxyt(:,:,idx(k)) = -pref_z .* Gxy .* Rz(k) .* exp(-v * tk * mua);
 end
 
 end

@@ -142,6 +142,9 @@ sy = 0.01;      % [mm] = 10 um
 
 Txyt = Txyt_ADE(x, y, t, L, n_in, n_ext, musx, musy, musz, g, sx, sy, mua)  * dt * dx^2;
 
+% Multiply by dt * dx^2 only to convert the returned density
+% [mm^-2 ns^-1] into a per-bin signal for the plotted animation.
+
 figure()
 for i = 1:numel(t)
     imagesc(x, y, Txyt(:,:,i).');
@@ -225,6 +228,11 @@ The Python implementation has been benchmarked against the MATLAB implementation
 - all reflectance/transmittance functions in steady-state, time-resolved, space-resolved, and time-space-resolved forms
 
 Tests are organized under `python/tests/` and are ready for `pytest`.
+From `python/`, they can be run directly from a source checkout with:
+
+```bash
+python -m pytest -q
+```
 
 ## Citation
 

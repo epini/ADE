@@ -95,6 +95,9 @@ Run from the `python/` folder after the editable install:
 python -m pytest -q
 ```
 
+The tests also prepend `src/` automatically, so they can be run directly
+from a fresh source checkout before an editable install.
+
 The repository includes:
 
 - smoke tests for import and basic execution

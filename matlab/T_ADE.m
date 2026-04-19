@@ -74,7 +74,7 @@ else
               - sign(z2) * exp(-abs(z2) * kappa);
     end
 
-    T = abs(T / 2);
+    T = T / 2;
 
 end
 
